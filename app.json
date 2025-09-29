@@ -1,0 +1,27 @@
+{
+  "name": "Fintech Microservices (Heroku)",
+  "description": ".NET microservices on Heroku with Postgres, RabbitMQ, Papertrail",
+  "repository": "https://github.com/your/repo",
+  "stack": "container",
+  "env": {
+    "ASPNETCORE_ENVIRONMENT": {"value": "Production"},
+    "JWT_AUTHORITY": {"required": true},
+    "JWT_AUDIENCE": {"required": true},
+    "JWT_SIGNING_KEY": {"required": false, "description": "Optional symmetric key for JWT validation"},
+    "CLOUDAMQP_URL": {"required": false},
+    "PAPERTRAIL_ADDRESS": {"required": false},
+    "PAPERTRAIL_PORT": {"required": false}
+  },
+  "addons": [
+    {"plan": "heroku-postgresql:hobby-dev"},
+    {"plan": "cloudamqp:lemur"},
+    {"plan": "papertrail"}
+  ],
+  "formation": {
+    "web": {"quantity": 1, "size": "eco"},
+    "worker": {"quantity": 1, "size": "eco"}
+  },
+  "buildpacks": [
+    {"url": "heroku-community/multi-procfile"}
+  ]
+}

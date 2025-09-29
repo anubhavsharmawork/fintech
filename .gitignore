@@ -1,0 +1,14 @@
+# Ignore Visual Studio cache and workspace files
+.vs/
+
+# Ignore Node.js dependencies
+node_modules/
+
+# Ignore build output directories
+bin/
+debug/
+obj/
+
+# Ignore logs and temporary files
+*.log
+*.tmp

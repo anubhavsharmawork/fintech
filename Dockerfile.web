@@ -1,0 +1,28 @@
+# --------------------
+# Build UI (optional)
+# --------------------
+FROM node:18 AS ui-build
+WORKDIR /ui
+COPY ui/package.json ui/package-lock.json* ./
+RUN npm ci || npm install
+COPY ui/ .
+RUN npm run build
+
+# --------------------
+# Build ApiGateway (.NET 10)
+# --------------------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore ApiGateway/ApiGateway.csproj
+RUN dotnet publish ApiGateway/ApiGateway.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# --------------------
+# Runtime image (ASP.NET Core 10)
+# --------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+# Copy UI static files into wwwroot if present
+COPY --from=ui-build /ui/build ./wwwroot
+ENTRYPOINT ["dotnet","ApiGateway.dll"]

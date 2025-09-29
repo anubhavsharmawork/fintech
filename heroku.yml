@@ -1,0 +1,14 @@
+setup:
+  addons:
+    - plan: heroku-postgresql:hobby-dev
+    - plan: cloudamqp:lemur
+    - plan: papertrail
+
+build:
+  docker:
+    web: Dockerfile.web
+    worker: Dockerfile.worker
+
+run:
+  web: sh -c "dotnet ApiGateway.dll --urls http://0.0.0.0:$PORT"
+  worker: dotnet NotificationService.dll
