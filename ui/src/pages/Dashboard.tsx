@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { authFetch } from '../auth';
+
 type Account = { id: string; accountNumber: string; accountType: string; balance: number; currency: string };
 
 const Dashboard: React.FC = () => {
@@ -15,17 +17,16 @@ const Dashboard: React.FC = () => {
       setError(null);
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
         const [accRes, txRes] = await Promise.all([
-          fetch('/accounts', { headers: { 'Authorization': token ? `Bearer ${token}` : '' } }),
-          fetch('/transactions', { headers: { 'Authorization': token ? `Bearer ${token}` : '' } })
+          authFetch('/accounts'),
+          authFetch('/transactions')
         ]);
         if (!accRes.ok) throw new Error('Failed to load accounts');
         if (!txRes.ok) throw new Error('Failed to load transactions');
         const accData = await accRes.json();
         const txData = await txRes.json();
         setAccounts(accData);
-        setTxCount(Array.isArray(txData) ? txData.length : 0);
+        setTxCount(Array.isArray(txData) ? txData.length :0);
       } catch (e: any) {
         setError(e.message || 'Failed to load dashboard');
       } finally {
@@ -35,7 +36,7 @@ const Dashboard: React.FC = () => {
     load();
   }, []);
 
-  const total = accounts.reduce((s, a) => s + (a.balance || 0), 0);
+  const total = accounts.reduce((s, a) => s + (a.balance ||0),0);
 
   return (
     <div>
@@ -70,7 +71,7 @@ const Dashboard: React.FC = () => {
           <div className="card" role="region" aria-label="Accounts Summary">
             <h3>Accounts</h3>
             {accounts.map(a => (
-              <div key={a.id} style={{ display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid #eee' }}>
+              <div key={a.id} style={{ display:'flex', justifyContent:'space-between', padding:'10px0', borderBottom:'1px solid #eee' }}>
                 <div>
                   <strong>{a.accountType}</strong>
                   <div className="small">{a.accountNumber}</div>
@@ -78,7 +79,7 @@ const Dashboard: React.FC = () => {
                 <div><strong>{nzd.format(a.balance)}</strong></div>
               </div>
             ))}
-            {accounts.length === 0 && <p className="small">No accounts yet.</p>}
+            {accounts.length ===0 && <p className="small">No accounts yet.</p>}
           </div>
 
           <div className="card" role="region" aria-label="Quick Actions">

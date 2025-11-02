@@ -24,6 +24,7 @@ public class AccountDbContext : DbContext
     {
         modelBuilder.Entity<Account>(entity =>
         {
+            entity.ToTable("LedgerAccounts");
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.AccountNumber).IsUnique();
             entity.Property(e => e.AccountNumber).HasMaxLength(20).IsRequired();

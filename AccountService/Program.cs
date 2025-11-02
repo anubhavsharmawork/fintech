@@ -33,7 +33,7 @@ try
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        options.KnownNetworks.Clear();
+        options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();
     });
 
@@ -80,45 +80,18 @@ try
     // Use forwarded headers before auth
     app.UseForwardedHeaders();
 
-    // Auto-migrate database (or ensure created) and seed demo account
+    // Auto-migrate database
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
-        if ((await context.Database.GetPendingMigrationsAsync()).Any())
-            await context.Database.MigrateAsync();
-        else
-            await context.Database.EnsureCreatedAsync();
-
-        // Seed demo accounts if not present
-        var demoUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        if (!context.Accounts.Any(a => a.UserId == demoUserId))
+        try
         {
-            var now = DateTime.UtcNow;
-            context.Accounts.AddRange(
-                new Account
-                {
-                    Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                    UserId = demoUserId,
-                    AccountNumber = "123456789012",
-                    AccountType = "Checking",
-                    Balance = 2500.50m,
-                    Currency = "USD",
-                    CreatedAt = now,
-                    UpdatedAt = now
-                },
-                new Account
-                {
-                    Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-                    UserId = demoUserId,
-                    AccountNumber = "098765432109",
-                    AccountType = "Savings",
-                    Balance = 10000.00m,
-                    Currency = "USD",
-                    CreatedAt = now,
-                    UpdatedAt = now
-                }
-            );
-            context.SaveChanges();
+            await context.Database.MigrateAsync();
+            Log.Information("[DB][EF][Accounts] Database migrated");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[DB][EF][Accounts] Migration failed");
         }
     }
 
@@ -165,8 +138,7 @@ static string GetConnectionString(IConfiguration configuration)
             Username = uri.UserInfo.Split(':')[0],
             Password = uri.UserInfo.Split(':')[1],
             Database = uri.LocalPath.Trim('/'),
-            SslMode = SslMode.Require,
-            TrustServerCertificate = true
+            SslMode = SslMode.Require
         };
         return builder.ToString();
     }
@@ -182,8 +154,7 @@ static string GetConnectionString(IConfiguration configuration)
             Username = configuration["PGUSER"],
             Password = configuration["PGPASSWORD"],
             Database = configuration["PGDATABASE"] ?? "postgres",
-            SslMode = SslMode.Require,
-            TrustServerCertificate = true
+            SslMode = SslMode.Require
         };
         return cs.ToString();
     }

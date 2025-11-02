@@ -21,8 +21,17 @@ RUN dotnet publish ApiGateway/ApiGateway.csproj -c Release -o /app/publish /p:Us
 # Runtime image (ASP.NET Core 10)
 # --------------------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 WORKDIR /app
-COPY --from=build /app/publish .
+
+COPY --from=build --chown=appuser:appuser /app/publish .
 # Copy UI static files into wwwroot if present
-COPY --from=ui-build /ui/build ./wwwroot
+COPY --from=ui-build --chown=appuser:appuser /ui/build ./wwwroot
+
+# Switch to non-root user
+USER appuser
+
 ENTRYPOINT ["dotnet","ApiGateway.dll"]
