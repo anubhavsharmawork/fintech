@@ -34,7 +34,7 @@ try
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        options.KnownNetworks.Clear();
+        options.KnownIPNetworks.Clear();
         options.KnownProxies.Clear();
     });
 
@@ -102,55 +102,18 @@ try
     // Use forwarded headers before auth
     app.UseForwardedHeaders();
 
-    // Auto-migrate database and seed demo transactions
+    // Auto-migrate database
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
-        if ((await context.Database.GetPendingMigrationsAsync()).Any())
-            await context.Database.MigrateAsync();
-        else
-            await context.Database.EnsureCreatedAsync();
-
-        var demoUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        if (!context.Transactions.Any(t => t.UserId == demoUserId))
+        try
         {
-            var now = DateTime.UtcNow;
-            context.Transactions.AddRange(
-                new Transaction
-                {
-                    Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
-                    AccountId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                    UserId = demoUserId,
-                    Amount = 100.00m,
-                    Currency = "USD",
-                    Type = "credit",
-                    Description = "Salary deposit",
-                    CreatedAt = now.AddDays(-1)
-                },
-                new Transaction
-                {
-                    Id = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                    AccountId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                    UserId = demoUserId,
-                    Amount = 50.00m,
-                    Currency = "USD",
-                    Type = "debit",
-                    Description = "Grocery shopping",
-                    CreatedAt = now.AddDays(-2)
-                },
-                new Transaction
-                {
-                    Id = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
-                    AccountId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-                    UserId = demoUserId,
-                    Amount = 500.00m,
-                    Currency = "USD",
-                    Type = "credit",
-                    Description = "Transfer from checking",
-                    CreatedAt = now.AddDays(-3)
-                }
-            );
-            context.SaveChanges();
+            await context.Database.MigrateAsync();
+            Log.Information("[DB][EF][Transactions] Database migrated");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[DB][EF][Transactions] Migration failed");
         }
     }
 
@@ -197,8 +160,7 @@ static string GetConnectionString(IConfiguration configuration)
             Username = uri.UserInfo.Split(':')[0],
             Password = uri.UserInfo.Split(':')[1],
             Database = uri.LocalPath.Trim('/'),
-            SslMode = SslMode.Require,
-            TrustServerCertificate = true
+            SslMode = SslMode.Require
         };
         return builder.ToString();
     }
@@ -214,8 +176,7 @@ static string GetConnectionString(IConfiguration configuration)
             Username = configuration["PGUSER"],
             Password = configuration["PGPASSWORD"],
             Database = configuration["PGDATABASE"] ?? "postgres",
-            SslMode = SslMode.Require,
-            TrustServerCertificate = true
+            SslMode = SslMode.Require
         };
         return cs.ToString();
     }

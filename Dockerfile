@@ -16,7 +16,7 @@ RUN npm run build
 # --------------------
 # Build .NET project
 # --------------------
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy everything to allow cross-project restores
@@ -32,14 +32,21 @@ RUN dotnet publish ${PROJECT_PATH} -c Release -o /app/publish /p:UseAppHost=fals
 # --------------------
 # Runtime image (single stack: ASP.NET Core)
 # --------------------
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+
+# Create non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 WORKDIR /app
 
 # App binaries
-COPY --from=build /app/publish .
+COPY --from=build --chown=appuser:appuser /app/publish .
 
 # Copy UI static files into wwwroot (if build exists). This is safe even if not used by the selected project.
-COPY --from=ui-build /ui/build ./wwwroot
+COPY --from=ui-build --chown=appuser:appuser /ui/build ./wwwroot
+
+# Switch to non-root user
+USER appuser
 
 # Heroku will expose a PORT env var; we don't hardcode ASPNETCORE_URLS here.
 ENTRYPOINT ["dotnet"]

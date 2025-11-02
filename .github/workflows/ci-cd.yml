@@ -11,59 +11,67 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
+      
+      - name: List installed .NET SDKs
+        run: dotnet --list-sdks
+      
       - name: Restore
         run: dotnet restore
+      
       - name: Build
         run: dotnet build --no-restore -c Release
+      
       - name: Test
         run: dotnet test --no-build -c Release --logger trx
 
-  docker-publish-release:
-    needs: build-test
-    runs-on: ubuntu-latest
-    env:
-      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-      HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Login to Heroku Container Registry
-        run: |
-          echo $HEROKU_API_KEY | docker login --username=$HEROKU_EMAIL registry.heroku.com --password-stdin
-      - name: Build and push ApiGateway
-        run: |
-          docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_API_GATEWAY }}/web -f ApiGateway/Dockerfile .
-          docker push registry.heroku.com/${{ secrets.HEROKU_APP_API_GATEWAY }}/web
-      - name: Build and push UserService
-        run: |
-          docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_USER }}/web -f UserService/Dockerfile .
-          docker push registry.heroku.com/${{ secrets.HEROKU_APP_USER }}/web
-      - name: Build and push AccountService
-        run: |
-          docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_ACCOUNT }}/web -f AccountService/Dockerfile .
-          docker push registry.heroku.com/${{ secrets.HEROKU_APP_ACCOUNT }}/web
-      - name: Build and push TransactionService
-        run: |
-          docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_TRANSACTION }}/web -f TransactionService/Dockerfile .
-          docker push registry.heroku.com/${{ secrets.HEROKU_APP_TRANSACTION }}/web
-      - name: Build and push NotificationService (worker)
-        run: |
-          docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_NOTIFICATION }}/worker -f NotificationService/Dockerfile .
-          docker push registry.heroku.com/${{ secrets.HEROKU_APP_NOTIFICATION }}/worker
-      - name: Release ApiGateway
-        run: |
-          heroku container:release web -a ${{ secrets.HEROKU_APP_API_GATEWAY }}
-      - name: Release UserService
-        run: |
-          heroku container:release web -a ${{ secrets.HEROKU_APP_USER }}
-      - name: Release AccountService
-        run: |
-          heroku container:release web -a ${{ secrets.HEROKU_APP_ACCOUNT }}
-      - name: Release TransactionService
-        run: |
-          heroku container:release web -a ${{ secrets.HEROKU_APP_TRANSACTION }}
-      - name: Release NotificationService
-        run: |
-          heroku container:release worker -a ${{ secrets.HEROKU_APP_NOTIFICATION }}
+  # docker-publish-release:
+  #   needs: build-test
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+  #     HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Login to Heroku Container Registry
+  #       run: |
+  #         echo $HEROKU_API_KEY | docker login --username=$HEROKU_EMAIL registry.heroku.com --password-stdin
+  #     - name: Build and push ApiGateway
+  #       run: |
+  #         docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_API_GATEWAY }}/web -f ApiGateway/Dockerfile .
+  #         docker push registry.heroku.com/${{ secrets.HEROKU_APP_API_GATEWAY }}/web
+  #     - name: Build and push UserService
+  #       run: |
+  #         docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_USER }}/web -f UserService/Dockerfile .
+  #         docker push registry.heroku.com/${{ secrets.HEROKU_APP_USER }}/web
+  #     - name: Build and push AccountService
+  #       run: |
+  #         docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_ACCOUNT }}/web -f AccountService/Dockerfile .
+  #         docker push registry.heroku.com/${{ secrets.HEROKU_APP_ACCOUNT }}/web
+  #     - name: Build and push TransactionService
+  #       run: |
+  #         docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_TRANSACTION }}/web -f TransactionService/Dockerfile .
+  #         docker push registry.heroku.com/${{ secrets.HEROKU_APP_TRANSACTION }}/web
+  #     - name: Build and push NotificationService (worker)
+  #       run: |
+  #         docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_NOTIFICATION }}/worker -f NotificationService/Dockerfile .
+  #         docker push registry.heroku.com/${{ secrets.HEROKU_APP_NOTIFICATION }}/worker
+  #     - name: Release ApiGateway
+  #       run: |
+  #         heroku container:release web -a ${{ secrets.HEROKU_APP_API_GATEWAY }}
+  #     - name: Release UserService
+  #       run: |
+  #         heroku container:release web -a ${{ secrets.HEROKU_APP_USER }}
+  #     - name: Release AccountService
+  #       run: |
+  #         heroku container:release web -a ${{ secrets.HEROKU_APP_ACCOUNT }}
+  #     - name: Release TransactionService
+  #       run: |
+  #         heroku container:release web -a ${{ secrets.HEROKU_APP_TRANSACTION }}
+  #     - name: Release NotificationService
+  #       run: |
+  #         heroku container:release worker -a ${{ secrets.HEROKU_APP_NOTIFICATION }}

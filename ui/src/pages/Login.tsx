@@ -1,12 +1,14 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { setAuth } from '../auth';
 
 const Login: React.FC = () => {
   const [email, setEmail] = React.useState('demo');
-  const [password, setPassword] = React.useState('demo');
+  const [password, setPassword] = React.useState('Demo@2026');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation() as any;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +18,8 @@ const Login: React.FC = () => {
       const res = await fetch('/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
       });
 
       if (!res.ok) {
@@ -25,10 +28,12 @@ const Login: React.FC = () => {
       }
 
       const data = await res.json();
-      if ((data as any)?.token) {
-        localStorage.setItem('token', (data as any).token);
-        localStorage.setItem('userId', (data as any).userId);
-        navigate('/accounts');
+      const token = (data as any)?.token as string | undefined;
+      const userId = (data as any)?.userId as string | undefined;
+      if (token) {
+        setAuth(token, userId);
+        const redirectTo = location.state?.from?.pathname || '/accounts';
+        navigate(redirectTo, { replace: true });
       } else {
         throw new Error('Invalid response from server');
       }
@@ -68,7 +73,7 @@ const Login: React.FC = () => {
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
-          <p style={{ marginTop: '8px', color: '#666' }}>Demo login is prefilled as demo/demo.</p>
+          <p style={{ marginTop: '8px', color: '#666' }}>Demo login is prefilled as demo/Demo@2026.</p>
         </form>
       </div>
     </div>

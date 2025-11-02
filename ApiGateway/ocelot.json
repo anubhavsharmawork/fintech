@@ -11,22 +11,18 @@
   },
   "Routes": [
     {
-      "DownstreamPathTemplate": "/api/users/{everything}",
+      "DownstreamPathTemplate": "/users/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 7001 }],
-      "UpstreamPathTemplate": "/users/{everything}",
+      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5000 }],
+      "UpstreamPathTemplate": "/api/users/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer",
-        "AllowedScopes": []
-      },
       "Priority": 0
     },
     {
-      "DownstreamPathTemplate": "/api/accounts/{everything}",
+      "DownstreamPathTemplate": "/accounts/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 7002 }],
-      "UpstreamPathTemplate": "/accounts/{everything}",
+      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5000 }],
+      "UpstreamPathTemplate": "/api/accounts/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer",
@@ -34,10 +30,10 @@
       }
     },
     {
-      "DownstreamPathTemplate": "/api/transactions/{everything}",
+      "DownstreamPathTemplate": "/transactions/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 7003 }],
-      "UpstreamPathTemplate": "/transactions/{everything}",
+      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5000 }],
+      "UpstreamPathTemplate": "/api/transactions/{everything}",
       "UpstreamHttpMethod": ["GET", "POST"],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer",

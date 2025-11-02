@@ -24,6 +24,7 @@ public class TransactionDbContext : DbContext
     {
         modelBuilder.Entity<Transaction>(entity =>
         {
+            entity.ToTable("LedgerTransactions");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Amount).HasPrecision(18, 2);
             entity.Property(e => e.Currency).HasMaxLength(3).IsRequired();

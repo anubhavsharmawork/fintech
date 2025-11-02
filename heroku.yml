@@ -7,8 +7,6 @@ setup:
 build:
   docker:
     web: Dockerfile.web
-    worker: Dockerfile.worker
 
 run:
   web: sh -c "dotnet ApiGateway.dll --urls http://0.0.0.0:$PORT"
-  worker: dotnet NotificationService.dll

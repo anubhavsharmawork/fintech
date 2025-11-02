@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setAuth } from '../auth';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = React.useState({
@@ -27,7 +28,8 @@ const Register: React.FC = () => {
       const res = await fetch('/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
+        credentials: 'include'
       });
 
       if (!res.ok) {
@@ -36,10 +38,11 @@ const Register: React.FC = () => {
       }
 
       const data = await res.json();
-      if ((data as any)?.token) {
-        localStorage.setItem('token', (data as any).token);
-        localStorage.setItem('userId', (data as any).id);
-        navigate('/accounts');
+      const token = (data as any)?.token as string | undefined;
+      const id = (data as any)?.id as string | undefined;
+      if (token) {
+        setAuth(token, id);
+        navigate('/accounts', { replace: true });
       } else {
         throw new Error('Invalid response from server');
       }
