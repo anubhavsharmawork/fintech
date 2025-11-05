@@ -83,6 +83,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
  <a href="https://www.linkedin.com/in/anubhav-sharma-/" target="_blank" rel="noreferrer" aria-label="LinkedIn">
  <span aria-hidden>in</span>
  </a>
+ <span className="small" style={{ marginLeft: 'auto', marginRight: 'auto', textAlign: 'center', fontStyle: 'italic' }}>
+          This is a demo application. Do not use real financial or personal data.
+ </span>
  <span className="small" style={{ marginLeft: 'auto' }}>&copy; {year} Anubhav Sharma. All rights reserved.</span>
  </footer>
  </main>
