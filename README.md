@@ -1,5 +1,8 @@
 ﻿# FinTech Application – Microservices Platform 
 
+> [!WARNING]  
+> **This is a portfolio project and not a real financial application.** Do not use real personal or financial information. All data is for demonstration purposes only.
+
 Monorepo for a .NET microservices fintech platform deployed to Salesforce Heroku using Docker.
 
 Includes:
