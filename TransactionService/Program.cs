@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Serilog;
 using TransactionService.Data;
+using TransactionService.Services;
 using Npgsql;
 using MassTransit;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -19,15 +20,19 @@ try
     builder.Host.UseSerilog();
 
     // Bind to specific port locally or Heroku PORT
+    var transactionPort = Environment.GetEnvironmentVariable("TRANSACTION_PORT");
     var port = Environment.GetEnvironmentVariable("PORT");
-    if (!string.IsNullOrEmpty(port))
+    if (!string.IsNullOrEmpty(transactionPort))
+    {
+        builder.WebHost.UseUrls($"http://0.0.0.0:{transactionPort}");
+    }
+    else if (!string.IsNullOrEmpty(port))
     {
         builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
     }
     else
     {
-        var localPort = Environment.GetEnvironmentVariable("TRANSACTIONS_SERVICE_PORT") ?? "7003";
-        builder.WebHost.UseUrls($"http://0.0.0.0:{localPort}");
+        builder.WebHost.UseUrls("http://0.0.0.0:7003");
     }
 
     // Forwarded headers for reverse proxy (Heroku router)
@@ -39,9 +44,29 @@ try
     });
 
     // Database connection
-    var connectionString = GetConnectionString(builder.Configuration);
-    builder.Services.AddDbContext<TransactionDbContext>(options =>
-        options.UseNpgsql(connectionString));
+    string? connectionString = null;
+    try
+    {
+        connectionString = GetConnectionString(builder.Configuration);
+    }
+    catch
+    {
+        Log.Warning("No database connection string configuration found.");
+    }
+
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        builder.Services.AddDbContext<TransactionDbContext>(options =>
+            options.UseNpgsql(connectionString));
+    }
+    else
+    {
+        Log.Warning("Using InMemory database for TransactionDbContext (demo mode)");
+        builder.Services.AddDbContext<TransactionDbContext>(options =>
+             options.UseInMemoryDatabase("TransactionsDemo"));
+    }
+
+    builder.Services.AddScoped<BudgetAggregationService>();
 
     // Authentication
     const string DefaultDemoSigningKey = "demo-signing-key-change-me-0123456789-XYZ987654321";
@@ -72,24 +97,25 @@ try
         });
 
     // MassTransit configuration
+    var amqpUrl = builder.Configuration["CLOUDAMQP_URL"]
+                 ?? builder.Configuration["RABBITMQ_URL"]
+                 ?? builder.Configuration["AMQP_URL"];
+
     builder.Services.AddMassTransit(x =>
     {
-        x.UsingRabbitMq((context, cfg) =>
+        if (!string.IsNullOrWhiteSpace(amqpUrl) && Uri.TryCreate(amqpUrl, UriKind.Absolute, out var uri))
         {
-            var amqpUrl = builder.Configuration["CLOUDAMQP_URL"]
-                         ?? builder.Configuration["RABBITMQ_URL"]
-                         ?? builder.Configuration["AMQP_URL"]; // some providers use AMQP_URL
-
-            if (!string.IsNullOrWhiteSpace(amqpUrl) && Uri.TryCreate(amqpUrl, UriKind.Absolute, out var uri))
+            x.UsingRabbitMq((context, cfg) =>
             {
                 Log.Information("RabbitMQ broker: {Scheme}://{Host}:{Port}{Vhost}", uri.Scheme, uri.Host, uri.Port, uri.AbsolutePath);
                 cfg.Host(uri);
-            }
-            else
-            {
-                Log.Warning("RabbitMQ URL not configured. Transaction events will not be published.");
-            }
-        });
+            });
+        }
+        else
+        {
+            Log.Warning("RabbitMQ URL not configured. Using in-memory transport (events will not be published externally).");
+            x.UsingInMemory();
+        }
     });
 
     builder.Services.AddControllers();
@@ -102,18 +128,25 @@ try
     // Use forwarded headers before auth
     app.UseForwardedHeaders();
 
-    // Auto-migrate database
+    // Auto-migrate database (only if Relational)
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
-        try
+        if (context.Database.IsRelational())
         {
-            await context.Database.MigrateAsync();
-            Log.Information("[DB][EF][Transactions] Database migrated");
+            try
+            {
+                await context.Database.MigrateAsync();
+                Log.Information("[DB][EF][Transactions] Database migrated");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[DB][EF][Transactions] Migration failed");
+            }
         }
-        catch (Exception ex)
+        else
         {
-            Log.Error(ex, "[DB][EF][Transactions] Migration failed");
+            Log.Information("[DB][EF][Transactions] Skipping migration (Non-relational provider / InMemory)");
         }
     }
 
@@ -130,7 +163,7 @@ try
     app.MapControllers();
 
     Log.Information("TransactionService starting up");
-    app.Run();
+    await app.RunAsync();
 }
 catch (Exception ex)
 {
@@ -138,7 +171,7 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+await Log.CloseAndFlushAsync();
 }
 
 static string GetConnectionString(IConfiguration configuration)

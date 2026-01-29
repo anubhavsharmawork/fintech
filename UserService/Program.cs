@@ -20,15 +20,19 @@ try
  builder.Host.UseSerilog();
 
  // Bind to specific port when running locally (default7001) or Heroku PORT
+ var userPort = Environment.GetEnvironmentVariable("USERS_SERVICE_PORT");
  var port = Environment.GetEnvironmentVariable("PORT");
- if (!string.IsNullOrEmpty(port))
+ if (!string.IsNullOrEmpty(userPort))
+ {
+ builder.WebHost.UseUrls($"http://0.0.0.0:{userPort}");
+ }
+ else if (!string.IsNullOrEmpty(port))
  {
  builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
  }
  else
  {
- var localPort = Environment.GetEnvironmentVariable("USERS_SERVICE_PORT") ?? "7001";
- builder.WebHost.UseUrls($"http://0.0.0.0:{localPort}");
+ builder.WebHost.UseUrls("http://0.0.0.0:7001");
  }
 
  // Forwarded headers for reverse proxy (Heroku router)

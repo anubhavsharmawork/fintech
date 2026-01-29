@@ -8,6 +8,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="FinTech Application - Microservices Platform" />
+    <!-- CSP to allow ethers.js and MetaMask -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      connect-src 'self' https://*.infura.io https://*.alchemy.com https://sepolia.etherscan.io https://rpc.sepolia.org wss://*.infura.io wss://*.alchemy.com http://localhost:* https://localhost:*;
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+    " />
     <title>FinTech Application</title>
   </head>
   <body>

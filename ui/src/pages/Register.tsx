@@ -54,12 +54,16 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2>Register</h2>
-      <div className="card">
-        <form onSubmit={handleSubmit}>
+    <div className="auth-container">
+      <div className="card auth-card">
+        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#4b5563' }}>Create your account</h2>
+        <div className="alert alert-info" style={{ textAlign: 'center', padding: '20px' }}>
+          <strong>Registration Disabled</strong>
+          <p style={{ marginTop: '10px' }}>New account registration is currently disabled for security reasons.</p>
+        </div>
+        <form onSubmit={handleSubmit} style={{ opacity: 0.5, pointerEvents: 'none' }}>
           <div className="form-group">
-            <label htmlFor="firstName">First Name:</label>
+            <label htmlFor="firstName">First Name</label>
             <input
               type="text"
               id="firstName"
@@ -71,7 +75,7 @@ const Register: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="lastName">Last Name:</label>
+            <label htmlFor="lastName">Last Name</label>
             <input
               type="text"
               id="lastName"
@@ -83,7 +87,7 @@ const Register: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="email">Username or Email:</label>
+            <label htmlFor="email">Email address</label>
             <input
               type="text"
               id="email"
@@ -95,7 +99,7 @@ const Register: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="password">Password</label>
             <input
               type="password"
               id="password"
@@ -106,9 +110,9 @@ const Register: React.FC = () => {
               placeholder="••••••••"
             />
           </div>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Registering...' : 'Register'}
+          {error && <div className="alert alert-error">{error}</div>}
+          <button type="submit" className="btn btn-primary btn-block" disabled={true} style={{ marginTop: '1rem' }}>
+            Register Disabled
           </button>
         </form>
       </div>

@@ -1,0 +1,41 @@
+# Multi-service container for single dyno deployment with UI
+FROM node:18 AS ui-build
+WORKDIR /ui
+COPY ui/package.json ui/package-lock.json* ./
+RUN npm ci || npm install
+COPY ui/ .
+RUN npm run build
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY . .
+
+ARG CONFIG=Release
+
+RUN dotnet restore Fintech.sln
+RUN dotnet publish ApiGateway/ApiGateway.csproj -c ${CONFIG} -o /publish/ApiGateway /p:UseAppHost=false
+RUN dotnet publish UserService/UserService.csproj -c ${CONFIG} -o /publish/UserService /p:UseAppHost=false
+RUN dotnet publish AccountService/AccountService.csproj -c ${CONFIG} -o /publish/AccountService /p:UseAppHost=false
+RUN dotnet publish TransactionService/TransactionService.csproj -c ${CONFIG} -o /publish/TransactionService /p:UseAppHost=false
+RUN dotnet publish NotificationService/NotificationService.csproj -c ${CONFIG} -o /publish/NotificationService /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+
+COPY start-all.sh ./start-all.sh
+COPY --from=build /publish/ApiGateway ./ApiGateway
+COPY --from=build /publish/UserService ./UserService
+COPY --from=build /publish/AccountService ./AccountService
+COPY --from=build /publish/TransactionService ./TransactionService
+COPY --from=build /publish/NotificationService ./NotificationService
+
+# Serve built UI from ApiGateway
+COPY --from=ui-build /ui/build ./ApiGateway/wwwroot
+
+RUN chmod +x ./start-all.sh
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 80
+CMD ["/bin/bash", "/app/start-all.sh"]

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { setAuth } from '../auth';
 
 const Login: React.FC = () => {
@@ -7,7 +7,6 @@ const Login: React.FC = () => {
   const [password, setPassword] = React.useState('Demo@2026');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const navigate = useNavigate();
   const location = useLocation() as any;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +32,9 @@ const Login: React.FC = () => {
       if (token) {
         setAuth(token, userId);
         const redirectTo = location.state?.from?.pathname || '/accounts';
-        navigate(redirectTo, { replace: true });
+        // navigate(redirectTo, { replace: true });
+        // Force reload to ensure auth state updates globally if needed, or just navigate
+        window.location.href = redirectTo; 
       } else {
         throw new Error('Invalid response from server');
       }
@@ -45,36 +46,42 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      <div className="card">
+    <div className="auth-container">
+      <div className="card auth-card">
+        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#4b5563' }}>Log in to your account</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Username or Email:</label>
+            <label htmlFor="email">Email address</label>
             <input
               type="text"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="form-control"
+              placeholder="Enter your email"
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password:</label>
+            <label htmlFor="password">Password</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="form-control"
+              placeholder="Enter your password"
             />
           </div>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+          {error && <div className="alert alert-error">{error}</div>}
+          <button type="submit" className="btn btn-primary btn-block" disabled={loading} style={{ marginTop: '1rem' }}>
+            {loading ? 'Logging in...' : 'Log In'}
           </button>
-          <p style={{ marginTop: '8px', color: '#666' }}>Demo login is prefilled as demo/Demo@2026.</p>
         </form>
+      </div>
+      <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+        <p className="small">Demo login is prefilled as demo/Demo@2026.</p>
       </div>
     </div>
   );

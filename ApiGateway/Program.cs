@@ -20,6 +20,7 @@ using Ocelot.Responses;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using System.Reflection;
 
 Log.Logger = new LoggerConfiguration()
  .MinimumLevel.Information()
@@ -39,34 +40,23 @@ try
  builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
  }
 
+ // Ensure content root is where the assembly resides (important when launched from /app)
+ var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+ if (!string.IsNullOrEmpty(assemblyDir))
+ {
+ builder.Host.UseContentRoot(assemblyDir);
+ }
+
  // Configuration
  builder.Configuration
- .SetBasePath(builder.Environment.ContentRootPath)
- .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true)
- .AddEnvironmentVariables();
+    .SetBasePath(builder.Environment.ContentRootPath)
+    .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();
 
- // Build a FileConfiguration with downstream port bound to current app
- var ocelotBase = builder.Configuration.GetSection(string.Empty).Get<FileConfiguration>() ?? new FileConfiguration();
- // Determine current port (Heroku provides PORT; local defaults to5000 or Kestrel value)
- var dsPort = !string.IsNullOrEmpty(port) && int.TryParse(port, out var herokuPort) ? herokuPort :5000;
- foreach (var route in ocelotBase.Routes ?? new List<FileRoute>())
- {
- if (route.DownstreamHostAndPorts != null)
- {
- foreach (var hp in route.DownstreamHostAndPorts)
- {
- hp.Host = "127.0.0.1";
- hp.Port = dsPort;
- }
- }
- // Make downstream path hit our local minimal API endpoints (strip /api prefix if present)
- if (!string.IsNullOrEmpty(route.DownstreamPathTemplate) && route.DownstreamPathTemplate.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
- {
- route.DownstreamPathTemplate = route.DownstreamPathTemplate.Substring(4); // remove '/api'
- }
- }
+ // Load Ocelot configuration as-is
+var ocelotBase = builder.Configuration.GetSection(string.Empty).Get<FileConfiguration>() ?? new FileConfiguration();
 
- // Log DB target very early
+// Log DB target very early
  if (TryGetConnectionString(builder.Configuration, out var earlyCs))
  {
  var csb = new NpgsqlConnectionStringBuilder(earlyCs);
@@ -154,8 +144,9 @@ try
         options.AddFixedWindowLimiter("transactions", opt =>
         {
             opt.Window = TimeSpan.FromMinutes(1);
-          opt.PermitLimit = 30;
-          opt.QueueLimit = 0;
+            opt.PermitLimit = 200; // allow higher throughput to reduce 429s
+            opt.QueueLimit = 20;
+            opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         });
         
         // Rate limiting for account operations
@@ -246,7 +237,7 @@ try
  app.UseSerilogRequestLogging();
 
  // RESEED: optionally drop ledger tables and clear EF history on startup when explicitly requested
- var reseed = builder.Configuration.GetValue<bool>("RESEED_DB", false)
+ var reseed = builder.Configuration.GetValue<bool>("RESEED_DB", true)
  || builder.Configuration.GetValue<bool>("RESEED_LEDGER", false)
  || string.Equals(builder.Configuration["DROP_LEDGER_ON_STARTUP"], "true", StringComparison.OrdinalIgnoreCase);
  if (reseed && TryGetConnectionString(app.Configuration, out _))
@@ -414,7 +405,7 @@ try
  return Results.Problem("Seed status failed", statusCode:500);
  }
  });
-
+ 
 
  // Minimal demo auth endpoints + DB-backed register/login
  app.MapPost("/users/login", async (HttpContext http, LoginRequest req, IConfiguration cfg, IHttpClientFactory httpFactory, CancellationToken ct) =>
@@ -797,7 +788,7 @@ try
  UpdatedAt = DateTime.UtcNow
  });
  }
- var result = list.Select(a => new { id = a.Id, accountNumber = a.AccountNumber, accountType = a.AccountType, balance = a.Balance, currency = a.Currency }).ToList<object>();
+ var result = list.Select(a => new { id = a.Id, accountNumber = MaskAccountNumber(a.AccountNumber), accountType = a.AccountType, balance = a.Balance, currency = a.Currency }).ToList<object>();
  return Results.Ok(result);
  }
  Log.Information("[DB] Using DB for GET /accounts");
@@ -838,7 +829,7 @@ try
  UpdatedAt = DateTime.UtcNow
  });
  }
- var result = list.Select(a => new { id = a.Id, accountNumber = a.AccountNumber, accountType = a.AccountType, balance = a.Balance, currency = a.Currency }).ToList<object>();
+ var result = list.Select(a => new { id = a.Id, accountNumber = MaskAccountNumber(a.AccountNumber), accountType = a.AccountType, balance = a.Balance, currency = a.Currency }).ToList<object>();
  return Results.Ok(result);
  }
  }).RequireAuthorization();
@@ -877,7 +868,7 @@ try
  acc.Balance += initial;
  acc.UpdatedAt = DateTime.UtcNow;
  }
- return Results.Created($"/accounts/{id}", new { id, accountNumber = acc.AccountNumber, accountType = acc.AccountType, balance = acc.Balance, currency = acc.Currency });
+ return Results.Created($"/accounts/{id}", new { id, accountNumber = MaskAccountNumber(acc.AccountNumber), accountType = acc.AccountType, balance = acc.Balance, currency = acc.Currency });
  }
 
  try
@@ -904,7 +895,7 @@ try
  // also insert a credit transaction
  await CreateTransactionAsync(cfg, userId, id, initial, currency, "credit", "Initial deposit");
  }
- return Results.Created($"/accounts/{id}", new { id, accountNumber = accNum, accountType = accountType, balance = initial, currency });
+ return Results.Created($"/accounts/{id}", new { id, accountNumber = MaskAccountNumber(accNum), accountType = accountType, balance = initial, currency });
  }
  catch (PostgresException pex) when (pex.SqlState == "42P01")
  {
@@ -932,7 +923,7 @@ try
  {
  await CreateTransactionAsync(cfg, userId, id, initial, currency, "credit", "Initial deposit");
  }
- return Results.Created($"/accounts/{id}", new { id, accountNumber = accNum, accountType = accountType, balance = initial, currency });
+ return Results.Created($"/accounts/{id}", new { id, accountNumber = MaskAccountNumber(accNum), accountType = accountType, balance = initial, currency });
  }
  catch (Exception ex)
  {
@@ -947,6 +938,311 @@ try
  }
  }).RequireAuthorization().RequireRateLimiting("accounts");
 
+ // ============= Bank Connections Endpoints (Open Banking Mock) =============
+
+ // Mock bank data for demo purposes
+ var mockBanks = new List<object>
+ {
+  new { id = "nz_anz", name = "ANZ New Zealand", logo = "🏦", country = "NZ" },
+  new { id = "nz_asb", name = "ASB Bank", logo = "🏛️", country = "NZ" },
+  new { id = "nz_bnz", name = "BNZ", logo = "🏦", country = "NZ" },
+  new { id = "nz_westpac", name = "Westpac NZ", logo = "🔴", country = "NZ" },
+  new { id = "nz_kiwibank", name = "Kiwibank", logo = "🥝", country = "NZ" },
+  new { id = "au_commbank", name = "CommBank", logo = "🟡", country = "AU" },
+  new { id = "au_nab", name = "NAB", logo = "🔴", country = "AU" },
+  new { id = "au_westpac", name = "Westpac AU", logo = "🔴", country = "AU" },
+  new { id = "uk_hsbc", name = "HSBC UK", logo = "🔴", country = "UK" },
+  new { id = "uk_barclays", name = "Barclays", logo = "🔵", country = "UK" }
+ };
+
+ // Get available banks
+ app.MapGet("/bankconnections/available", (HttpContext http, string? country) =>
+ {
+  var banks = string.IsNullOrWhiteSpace(country)
+   ? mockBanks
+   : mockBanks.Where(b => ((dynamic)b).country.ToString().Equals(country, StringComparison.OrdinalIgnoreCase)).ToList();
+  return Results.Ok(banks);
+ }).RequireAuthorization();
+
+ // Get connected banks
+ app.MapGet("/bankconnections", async (HttpContext http, IConfiguration cfg) =>
+ {
+  var userId = GetUserIdFromToken(http.User);
+  if (userId == Guid.Empty) return Results.Unauthorized();
+
+  if (!TryGetConnectionString(cfg, out _))
+  {
+   var list = InMemoryData.BankConnectionsByUser.GetOrAdd(userId, _ => new List<InMemBankConnection>());
+   return Results.Ok(list.Select(bc => new { bc.Id, bc.BankId, bc.BankName, bc.BankLogo, bc.Status, bc.ConnectedAt }));
+  }
+
+  try
+  {
+   await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
+   await conn.OpenAsync();
+   var sql = "SELECT \"Id\", \"BankId\", \"BankName\", \"BankLogo\", \"Status\", \"ConnectedAt\" FROM \"BankConnections\" WHERE \"UserId\" = @uid";
+   await using var cmd = new NpgsqlCommand(sql, conn);
+   cmd.Parameters.AddWithValue("uid", userId);
+   var results = new List<object>();
+   await using var reader = await cmd.ExecuteReaderAsync();
+   while (await reader.ReadAsync())
+   {
+    results.Add(new { 
+     Id = reader.GetGuid(0), 
+     BankId = reader.GetString(1), 
+     BankName = reader.GetString(2), 
+     BankLogo = reader.GetString(3), 
+     Status = reader.GetString(4), 
+     ConnectedAt = reader.GetDateTime(5) 
+    });
+   }
+   return Results.Ok(results);
+  }
+  catch (PostgresException pex) when (pex.SqlState == "42P01")
+  {
+   await EnsureBankConnectionTablesAsync(cfg);
+   return Results.Ok(new List<object>());
+  }
+  catch (Exception ex)
+  {
+   Log.Error(ex, "Get bank connections failed for {UserId}", userId);
+   return Results.Ok(new List<object>());
+  }
+ }).RequireAuthorization();
+
+ // Connect to a bank
+ app.MapPost("/bankconnections/connect", async (HttpContext http, IConfiguration cfg, ConnectBankRequest req) =>
+ {
+  var userId = GetUserIdFromToken(http.User);
+  if (userId == Guid.Empty) return Results.Unauthorized();
+
+  var bank = mockBanks.FirstOrDefault(b => ((dynamic)b).id.ToString() == req.BankId);
+  if (bank == null) return Results.BadRequest(new { message = "Invalid bank ID" });
+
+  var bankId = ((dynamic)bank).id.ToString();
+  var bankName = ((dynamic)bank).name.ToString();
+  var bankLogo = ((dynamic)bank).logo.ToString();
+
+  if (!TryGetConnectionString(cfg, out _))
+  {
+   var list = InMemoryData.BankConnectionsByUser.GetOrAdd(userId, _ => new List<InMemBankConnection>());
+   if (list.Any(bc => bc.BankId == bankId))
+    return Results.Conflict(new { message = "Bank already connected" });
+
+   var connectionId = Guid.NewGuid();
+   list.Add(new InMemBankConnection { Id = connectionId, UserId = userId, BankId = bankId, BankName = bankName, BankLogo = bankLogo, Status = "Active", ConnectedAt = DateTime.UtcNow });
+
+   // Generate mock accounts
+   var accounts = GenerateMockBankAccounts(connectionId, userId, bankName);
+   var accList = InMemoryData.ExternalBankAccountsByUser.GetOrAdd(userId, _ => new List<InMemExternalBankAccount>());
+   accList.AddRange(accounts);
+
+   return Results.Ok(new { connectionId, bankId, bankName, status = "Active", accountsImported = accounts.Count });
+  }
+
+  try
+  {
+   await EnsureBankConnectionTablesAsync(cfg);
+   await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
+   await conn.OpenAsync();
+
+   // Check existing
+   var checkSql = "SELECT COUNT(*) FROM \"BankConnections\" WHERE \"UserId\" = @uid AND \"BankId\" = @bid";
+   await using (var checkCmd = new NpgsqlCommand(checkSql, conn))
+   {
+    checkCmd.Parameters.AddWithValue("uid", userId);
+    checkCmd.Parameters.AddWithValue("bid", bankId);
+    var count = (long)(await checkCmd.ExecuteScalarAsync() ?? 0);
+    if (count > 0) return Results.Conflict(new { message = "Bank already connected" });
+   }
+
+   var connectionId = Guid.NewGuid();
+   var insertSql = "INSERT INTO \"BankConnections\" (\"Id\", \"UserId\", \"BankId\", \"BankName\", \"BankLogo\", \"Status\", \"ConnectedAt\", \"UpdatedAt\") VALUES (@id, @uid, @bid, @bname, @blogo, 'Active', NOW(), NOW())";
+   await using (var insertCmd = new NpgsqlCommand(insertSql, conn))
+   {
+    insertCmd.Parameters.AddWithValue("id", connectionId);
+    insertCmd.Parameters.AddWithValue("uid", userId);
+    insertCmd.Parameters.AddWithValue("bid", bankId);
+    insertCmd.Parameters.AddWithValue("bname", bankName);
+    insertCmd.Parameters.AddWithValue("blogo", bankLogo);
+    await insertCmd.ExecuteNonQueryAsync();
+   }
+
+   // Generate mock accounts
+   var random = new Random();
+   var accountTypes = new[] { "Checking", "Savings", "Credit Card" };
+   var accountCount = random.Next(1, 4);
+   for (int i = 0; i < accountCount; i++)
+   {
+    var accId = Guid.NewGuid();
+    var accType = accountTypes[i % accountTypes.Length];
+    var accSql = "INSERT INTO \"ExternalBankAccounts\" (\"Id\", \"BankConnectionId\", \"UserId\", \"ExternalAccountId\", \"AccountName\", \"AccountType\", \"AccountNumber\", \"Balance\", \"Currency\", \"LastSyncedAt\") VALUES (@id, @bcid, @uid, @extid, @name, @type, @num, @bal, 'NZD', NOW())";
+    await using var accCmd = new NpgsqlCommand(accSql, conn);
+    accCmd.Parameters.AddWithValue("id", accId);
+    accCmd.Parameters.AddWithValue("bcid", connectionId);
+    accCmd.Parameters.AddWithValue("uid", userId);
+    accCmd.Parameters.AddWithValue("extid", $"ext_{Guid.NewGuid():N}");
+    accCmd.Parameters.AddWithValue("name", $"{bankName} {accType}");
+    accCmd.Parameters.AddWithValue("type", accType);
+    accCmd.Parameters.AddWithValue("num", $"****{random.Next(1000, 9999)}");
+    accCmd.Parameters.AddWithValue("bal", Math.Round((decimal)(random.NextDouble() * 10000 + 500), 2));
+    await accCmd.ExecuteNonQueryAsync();
+   }
+
+   return Results.Ok(new { connectionId, bankId, bankName, status = "Active", accountsImported = accountCount });
+  }
+  catch (Exception ex)
+  {
+   Log.Error(ex, "Connect bank failed for {UserId}", userId);
+   return Results.Problem("Failed to connect bank", statusCode: 500);
+  }
+ }).RequireAuthorization();
+
+ // Get external bank accounts
+ app.MapGet("/bankconnections/accounts", async (HttpContext http, IConfiguration cfg) =>
+ {
+  var userId = GetUserIdFromToken(http.User);
+  if (userId == Guid.Empty) return Results.Unauthorized();
+
+  if (!TryGetConnectionString(cfg, out _))
+  {
+   var accList = InMemoryData.ExternalBankAccountsByUser.GetOrAdd(userId, _ => new List<InMemExternalBankAccount>());
+   var connList = InMemoryData.BankConnectionsByUser.GetOrAdd(userId, _ => new List<InMemBankConnection>());
+   return Results.Ok(accList.Select(a => {
+    var bc = connList.FirstOrDefault(c => c.Id == a.BankConnectionId);
+    return new { a.Id, a.AccountName, a.AccountType, a.AccountNumber, a.Balance, a.Currency, a.LastSyncedAt, bankName = bc?.BankName, bankLogo = bc?.BankLogo };
+   }));
+  }
+
+  try
+  {
+   await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
+   await conn.OpenAsync();
+   var sql = @"SELECT a.""Id"", a.""AccountName"", a.""AccountType"", a.""AccountNumber"", a.""Balance"", a.""Currency"", a.""LastSyncedAt"", b.""BankName"", b.""BankLogo"" 
+        FROM ""ExternalBankAccounts"" a 
+        JOIN ""BankConnections"" b ON a.""BankConnectionId"" = b.""Id"" 
+        WHERE a.""UserId"" = @uid";
+   await using var cmd = new NpgsqlCommand(sql, conn);
+   cmd.Parameters.AddWithValue("uid", userId);
+   var results = new List<object>();
+   await using var reader = await cmd.ExecuteReaderAsync();
+   while (await reader.ReadAsync())
+   {
+    results.Add(new { 
+     Id = reader.GetGuid(0), 
+     AccountName = reader.GetString(1), 
+     AccountType = reader.GetString(2), 
+     AccountNumber = reader.GetString(3), 
+     Balance = reader.GetDecimal(4), 
+     Currency = reader.GetString(5), 
+     LastSyncedAt = reader.GetDateTime(6),
+     bankName = reader.GetString(7),
+     bankLogo = reader.GetString(8)
+    });
+   }
+   return Results.Ok(results);
+  }
+  catch (PostgresException pex) when (pex.SqlState == "42P01")
+  {
+   await EnsureBankConnectionTablesAsync(cfg);
+   return Results.Ok(new List<object>());
+  }
+  catch (Exception ex)
+  {
+   Log.Error(ex, "Get external accounts failed for {UserId}", userId);
+   return Results.Ok(new List<object>());
+  }
+ }).RequireAuthorization();
+
+ // Disconnect a bank
+ app.MapDelete("/bankconnections/{connectionId}", async (HttpContext http, IConfiguration cfg, Guid connectionId) =>
+ {
+  var userId = GetUserIdFromToken(http.User);
+  if (userId == Guid.Empty) return Results.Unauthorized();
+
+  if (!TryGetConnectionString(cfg, out _))
+  {
+   var list = InMemoryData.BankConnectionsByUser.GetOrAdd(userId, _ => new List<InMemBankConnection>());
+   var removed = list.RemoveAll(bc => bc.Id == connectionId && bc.UserId == userId);
+   if (removed == 0) return Results.NotFound();
+   var accList = InMemoryData.ExternalBankAccountsByUser.GetOrAdd(userId, _ => new List<InMemExternalBankAccount>());
+   accList.RemoveAll(a => a.BankConnectionId == connectionId);
+   return Results.NoContent();
+  }
+
+  try
+  {
+   await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
+   await conn.OpenAsync();
+   var sql = "DELETE FROM \"BankConnections\" WHERE \"Id\" = @id AND \"UserId\" = @uid";
+   await using var cmd = new NpgsqlCommand(sql, conn);
+   cmd.Parameters.AddWithValue("id", connectionId);
+   cmd.Parameters.AddWithValue("uid", userId);
+   var rows = await cmd.ExecuteNonQueryAsync();
+   return rows > 0 ? Results.NoContent() : Results.NotFound();
+  }
+  catch (Exception ex)
+  {
+   Log.Error(ex, "Disconnect bank failed for {UserId}", userId);
+   return Results.Problem("Failed to disconnect bank", statusCode: 500);
+  }
+ }).RequireAuthorization();
+
+ // Sync bank accounts
+ app.MapPost("/bankconnections/{connectionId}/sync", async (HttpContext http, IConfiguration cfg, Guid connectionId) =>
+ {
+  var userId = GetUserIdFromToken(http.User);
+  if (userId == Guid.Empty) return Results.Unauthorized();
+
+  var random = new Random();
+
+  if (!TryGetConnectionString(cfg, out _))
+  {
+   var list = InMemoryData.BankConnectionsByUser.GetOrAdd(userId, _ => new List<InMemBankConnection>());
+   if (!list.Any(bc => bc.Id == connectionId)) return Results.NotFound();
+   var accList = InMemoryData.ExternalBankAccountsByUser.GetOrAdd(userId, _ => new List<InMemExternalBankAccount>());
+   foreach (var acc in accList.Where(a => a.BankConnectionId == connectionId))
+   {
+    var change = (decimal)(random.NextDouble() * 0.1 - 0.05);
+    acc.Balance += acc.Balance * change;
+    acc.LastSyncedAt = DateTime.UtcNow;
+   }
+   return Results.Ok(new { message = "Accounts synced successfully", syncedAt = DateTime.UtcNow });
+  }
+
+  try
+  {
+   await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
+   await conn.OpenAsync();
+
+   // Verify ownership
+   var checkSql = "SELECT COUNT(*) FROM \"BankConnections\" WHERE \"Id\" = @id AND \"UserId\" = @uid";
+   await using (var checkCmd = new NpgsqlCommand(checkSql, conn))
+   {
+    checkCmd.Parameters.AddWithValue("id", connectionId);
+    checkCmd.Parameters.AddWithValue("uid", userId);
+    var count = (long)(await checkCmd.ExecuteScalarAsync() ?? 0);
+    if (count == 0) return Results.NotFound();
+   }
+
+   // Update balances with random changes
+   var updateSql = "UPDATE \"ExternalBankAccounts\" SET \"Balance\" = \"Balance\" * (1 + @change), \"LastSyncedAt\" = NOW() WHERE \"BankConnectionId\" = @bcid";
+   await using var updateCmd = new NpgsqlCommand(updateSql, conn);
+   updateCmd.Parameters.AddWithValue("bcid", connectionId);
+   updateCmd.Parameters.AddWithValue("change", (decimal)(random.NextDouble() * 0.1 - 0.05));
+   await updateCmd.ExecuteNonQueryAsync();
+
+   return Results.Ok(new { message = "Accounts synced successfully", syncedAt = DateTime.UtcNow });
+  }
+  catch (Exception ex)
+  {
+   Log.Error(ex, "Sync bank accounts failed for {UserId}", userId);
+   return Results.Problem("Failed to sync accounts", statusCode: 500);
+  }
+ }).RequireAuthorization();
+
+ // ============= End Bank Connections Endpoints =============
+
  // Local transactions endpoint backed by DB or in-memory
  app.MapGet("/transactions", async (HttpContext http, IConfiguration cfg) =>
  {
@@ -958,7 +1254,7 @@ try
  {
  Log.Warning("[DB] No DB configured, using in-memory for GET /transactions");
  var list = InMemoryData.TransactionsByUser.GetOrAdd(userId, _ => new List<InMemTransaction>());
- var result = list.OrderByDescending(t => t.CreatedAt).Select(t => new { id = t.Id, accountId = t.AccountId, amount = t.Amount, currency = t.Currency, type = t.Type, description = t.Description, createdAt = t.CreatedAt }).ToList<object>();
+ var result = list.OrderByDescending(t => t.CreatedAt).Select(t => new { id = t.Id, accountId = t.AccountId, amount = t.Amount, currency = t.Currency, type = t.Type, description = t.Description, createdAt = t.CreatedAt, spendingType = t.SpendingType }).ToList<object>();
  return Results.Ok(result);
  }
  Log.Information("[DB] Using DB for GET /transactions");
@@ -1067,7 +1363,7 @@ try
  {
  list.Add(new InMemPayee(Guid.NewGuid(), userId, "Demo Payee", "DEMO1234567890", DateTime.UtcNow));
  }
- return Results.Ok(list.Select(p => new { id = p.Id, name = p.Name, accountNumber = p.AccountNumber }).ToList());
+ return Results.Ok(list.Select(p => new { id = p.Id, name = p.Name, accountNumber = MaskAccountNumber(p.AccountNumber) }).ToList());
  }
  Log.Information("[DB] Using DB for GET /payees");
  await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
@@ -1079,7 +1375,7 @@ try
  var res = new List<object>();
  while (await reader.ReadAsync())
  {
- res.Add(new { id = reader.GetGuid(0), name = reader.GetString(1), accountNumber = reader.GetString(2) });
+ res.Add(new { id = reader.GetGuid(0), name = reader.GetString(1), accountNumber = MaskAccountNumber(reader.GetString(2)) });
  }
  if (res.Count ==0)
  {
@@ -1094,7 +1390,7 @@ try
  ic.Parameters.AddWithValue("n", "Demo Payee");
  ic.Parameters.AddWithValue("a", "DEMO1234567890");
  await ic.ExecuteNonQueryAsync();
- return Results.Ok(new[] { new { id, name = "Demo Payee", accountNumber = "DEMO1234567890" } });
+ return Results.Ok(new[] { new { id, name = "Demo Payee", accountNumber = MaskAccountNumber("DEMO1234567890") } });
  }
  return Results.Ok(res);
  }).RequireAuthorization().RequireRateLimiting("accounts");
@@ -1112,7 +1408,7 @@ try
  var list = InMemoryData.PayeesByUser.GetOrAdd(userId, _ => new List<InMemPayee>());
  var p = new InMemPayee(Guid.NewGuid(), userId, req.Name!, req.AccountNumber!, DateTime.UtcNow);
  list.Add(p);
- return Results.Created($"/payees/{p.Id}", new { id = p.Id, name = p.Name, accountNumber = p.AccountNumber });
+ return Results.Created($"/payees/{p.Id}", new { id = p.Id, name = p.Name, accountNumber = MaskAccountNumber(p.AccountNumber) });
  }
  Log.Information("[DB] Using DB for POST /payees");
  await using var conn2 = new NpgsqlConnection(GetConnectionString(cfg));
@@ -1125,7 +1421,7 @@ try
  cmd2.Parameters.AddWithValue("n", req.Name);
  cmd2.Parameters.AddWithValue("a", req.AccountNumber);
  await cmd2.ExecuteNonQueryAsync();
- return Results.Created($"/payees/{id2}", new { id = id2, name = req.Name, accountNumber = req.AccountNumber });
+ return Results.Created($"/payees/{id2}", new { id = id2, name = req.Name, accountNumber = MaskAccountNumber(req.AccountNumber) });
  }).RequireAuthorization().RequireRateLimiting("accounts");
 
  app.MapPost("/payments", async (HttpContext http, IConfiguration cfg, CreatePaymentRequest req) =>
@@ -1195,6 +1491,64 @@ try
  }
  }).RequireAuthorization().RequireRateLimiting("transactions");
 
+ // Budget aggregation endpoint - local implementation (no downstream service dependency)
+ app.MapGet("/budget/budget", async (HttpContext http, IConfiguration cfg, Guid accountId, DateTime from, DateTime to) =>
+ {
+ var userId = GetUserIdFromToken(http.User);
+ if (userId == Guid.Empty) return Results.Unauthorized();
+
+ if (accountId == Guid.Empty)
+ {
+  return Results.BadRequest(new { error = "accountId is required" });
+ }
+
+ if (from == default || to == default || from > to)
+ {
+  return Results.BadRequest(new { error = "Invalid date range" });
+ }
+
+ try
+ {
+  Log.Information("[Budget] Aggregating budget for account {AccountId} from {From} to {To}", accountId, from, to);
+  var budget = await GetBudgetAsync(cfg, accountId, from, to);
+  return Results.Ok(new
+  {
+  fun = budget.Fun,
+  @fixed = budget.Fixed,
+  future = budget.Future,
+  total = budget.Total,
+  period = new { from = budget.PeriodFrom, to = budget.PeriodTo }
+  });
+ }
+ catch (PostgresException pex) when (pex.SqlState == "42P01")
+ {
+  // Table doesn't exist yet - ensure schema and retry
+  try
+  {
+  await EnsureLedgerTablesAsync(cfg);
+  var budget = await GetBudgetAsync(cfg, accountId, from, to);
+  return Results.Ok(new
+  {
+   fun = budget.Fun,
+   @fixed = budget.Fixed,
+   future = budget.Future,
+   total = budget.Total,
+   period = new { from = budget.PeriodFrom, to = budget.PeriodTo }
+  });
+  }
+  catch (Exception ex)
+  {
+  Log.Error(ex, "[Budget] Ensure schema + retry failed");
+  return Results.Problem("Failed to load budget", statusCode: 500);
+  }
+ }
+ catch (Exception ex)
+ {
+  Log.Error(ex, "[Budget] GetBudget failed for account {AccountId}", accountId);
+  return Results.Problem("Failed to load budget", statusCode: 500);
+ }
+ }).RequireAuthorization().RequireRateLimiting("transactions");
+
  app.MapHealthChecks("/health");
  app.MapControllers();
 
@@ -1213,6 +1567,10 @@ try
  var isLocalHandled = path.StartsWith("/users", StringComparison.OrdinalIgnoreCase)
  || path.StartsWith("/accounts", StringComparison.OrdinalIgnoreCase)
  || path.StartsWith("/transactions", StringComparison.OrdinalIgnoreCase)
+ || path.StartsWith("/budget", StringComparison.OrdinalIgnoreCase)
+ || path.StartsWith("/payees", StringComparison.OrdinalIgnoreCase)
+ || path.StartsWith("/payments", StringComparison.OrdinalIgnoreCase)
+ || path.StartsWith("/bankconnections", StringComparison.OrdinalIgnoreCase)
  || path.Equals("/", StringComparison.OrdinalIgnoreCase)
  || path.StartsWith("/_debug", StringComparison.OrdinalIgnoreCase)
  || path.StartsWith("/health", StringComparison.OrdinalIgnoreCase);
@@ -1296,6 +1654,13 @@ partial class Program
  return n.ToString();
  }
 
+ static string MaskAccountNumber(string accountNumber)
+ {
+ if (string.IsNullOrEmpty(accountNumber) || accountNumber.Length < 4)
+ return "****";
+ return $"****{accountNumber.Substring(accountNumber.Length - 4)}";
+ }
+ 
  static bool TryGetConnectionString(IConfiguration cfg, out string connectionString)
  {
  //1. ConnectionStrings:DefaultConnection
@@ -1458,7 +1823,7 @@ partial class Program
  var list = new List<object>();
  while (await reader.ReadAsync())
  {
- list.Add(new { id = reader.GetGuid(0), accountNumber = reader.GetString(1), accountType = reader.GetString(2), balance = reader.GetDecimal(3), currency = reader.GetString(4) });
+ list.Add(new { id = reader.GetGuid(0), accountNumber = MaskAccountNumber(reader.GetString(1)), accountType = reader.GetString(2), balance = reader.GetDecimal(3), currency = reader.GetString(4) });
  }
  return list;
  }
@@ -1468,16 +1833,142 @@ partial class Program
  if (!TryGetConnectionString(cfg, out _)) return new List<object>();
  await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
  await conn.OpenAsync();
- var sql = "SELECT \"Id\", \"AccountId\", \"Amount\", \"Currency\", \"Type\", \"Description\", \"CreatedAt\" FROM \"LedgerTransactions\" WHERE \"UserId\"=@uid ORDER BY \"CreatedAt\" DESC";
+ var sql = "SELECT \"Id\", \"AccountId\", \"Amount\", \"Currency\", \"Type\", \"Description\", \"CreatedAt\", \"SpendingType\" FROM \"LedgerTransactions\" WHERE \"UserId\"=@uid ORDER BY \"CreatedAt\" DESC";
  await using var cmd = new NpgsqlCommand(sql, conn);
  cmd.Parameters.AddWithValue("uid", userId);
  await using var reader = await cmd.ExecuteReaderAsync();
  var list = new List<object>();
  while (await reader.ReadAsync())
  {
- list.Add(new { id = reader.GetGuid(0), accountId = reader.GetGuid(1), amount = reader.GetDecimal(2), currency = reader.GetString(3), type = reader.GetString(4), description = reader.GetString(5), createdAt = reader.GetDateTime(6) });
+  var spendingType = reader.IsDBNull(7) ? null : reader.GetString(7);
+  list.Add(new { id = reader.GetGuid(0), accountId = reader.GetGuid(1), amount = reader.GetDecimal(2), currency = reader.GetString(3), type = reader.GetString(4), description = reader.GetString(5), createdAt = reader.GetDateTime(6), spendingType });
  }
  return list;
+ }
+
+ static async Task EnsureBankConnectionTablesAsync(IConfiguration cfg)
+ {
+ if (!TryGetConnectionString(cfg, out _)) return;
+
+ await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
+ await conn.OpenAsync();
+
+ var createBankConnections = @"
+  CREATE TABLE IF NOT EXISTS ""BankConnections"" (
+   ""Id"" UUID PRIMARY KEY,
+   ""UserId"" UUID NOT NULL,
+   ""BankId"" VARCHAR(50) NOT NULL,
+   ""BankName"" VARCHAR(100) NOT NULL,
+   ""BankLogo"" VARCHAR(500) NOT NULL,
+   ""Status"" VARCHAR(20) NOT NULL DEFAULT 'Active',
+   ""AccessToken"" VARCHAR(500),
+   ""TokenExpiresAt"" TIMESTAMP,
+   ""ConnectedAt"" TIMESTAMP NOT NULL DEFAULT NOW(),
+   ""UpdatedAt"" TIMESTAMP NOT NULL DEFAULT NOW(),
+   UNIQUE(""UserId"", ""BankId"")
+  )";
+ await using (var cmd = new NpgsqlCommand(createBankConnections, conn))
+ {
+  await cmd.ExecuteNonQueryAsync();
+ }
+
+ var createExternalAccounts = @"
+  CREATE TABLE IF NOT EXISTS ""ExternalBankAccounts"" (
+   ""Id"" UUID PRIMARY KEY,
+   ""BankConnectionId"" UUID NOT NULL REFERENCES ""BankConnections""(""Id"") ON DELETE CASCADE,
+   ""UserId"" UUID NOT NULL,
+   ""ExternalAccountId"" VARCHAR(100) NOT NULL UNIQUE,
+   ""AccountName"" VARCHAR(100) NOT NULL,
+   ""AccountType"" VARCHAR(50) NOT NULL,
+   ""AccountNumber"" VARCHAR(50) NOT NULL,
+   ""Balance"" NUMERIC(18,2) NOT NULL DEFAULT 0,
+   ""Currency"" VARCHAR(3) NOT NULL DEFAULT 'NZD',
+   ""LastSyncedAt"" TIMESTAMP NOT NULL DEFAULT NOW()
+  )";
+ await using (var cmd = new NpgsqlCommand(createExternalAccounts, conn))
+ {
+  await cmd.ExecuteNonQueryAsync();
+ }
+
+ Log.Information("[DB] Bank connection tables ensured");
+ }
+
+ static List<InMemExternalBankAccount> GenerateMockBankAccounts(Guid connectionId, Guid userId, string bankName)
+ {
+ var random = new Random();
+ var accounts = new List<InMemExternalBankAccount>();
+ var accountTypes = new[] { "Checking", "Savings", "Credit Card" };
+ var accountCount = random.Next(1, 4);
+
+ for (int i = 0; i < accountCount; i++)
+ {
+  var type = accountTypes[i % accountTypes.Length];
+  accounts.Add(new InMemExternalBankAccount
+  {
+  Id = Guid.NewGuid(),
+  BankConnectionId = connectionId,
+  UserId = userId,
+  AccountName = $"{bankName} {type}",
+  AccountType = type,
+  AccountNumber = $"****{random.Next(1000, 9999)}",
+  Balance = Math.Round((decimal)(random.NextDouble() * 10000 + 500), 2),
+  Currency = "NZD",
+  LastSyncedAt = DateTime.UtcNow
+  });
+ }
+ return accounts;
+ }
+
+ // Budget aggregation helper - calculates Fun/Fixed/Future spending categories
+ internal record BudgetAggregationResult(decimal Fun, decimal Fixed, decimal Future, decimal Total, string PeriodFrom, string PeriodTo);
+
+ static async Task<BudgetAggregationResult> GetBudgetAsync(IConfiguration cfg, Guid accountId, DateTime from, DateTime to)
+ {
+ decimal fun = 0m, fixedTotal = 0m, future = 0m;
+
+ if (!TryGetConnectionString(cfg, out _))
+ {
+  // In-memory fallback - aggregate across all users (simplified for demo)
+  foreach (var kvp in InMemoryData.TransactionsByUser)
+  {
+  foreach (var tx in kvp.Value.Where(t => t.AccountId == accountId && t.CreatedAt >= from && t.CreatedAt <= to))
+  {
+   if (string.IsNullOrWhiteSpace(tx.SpendingType)) continue;
+   var normalized = tx.SpendingType.Trim().ToUpperInvariant();
+   switch (normalized)
+   {
+   case "FUN": fun += tx.Amount; break;
+   case "FIXED": fixedTotal += tx.Amount; break;
+   case "FUTURE": future += tx.Amount; break;
+   }
+  }
+  }
+  return new BudgetAggregationResult(fun, fixedTotal, future, fun + fixedTotal + future, from.ToString("O"), to.ToString("O"));
+ }
+
+ await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
+ await conn.OpenAsync();
+ var sql = @"SELECT ""Amount"", ""SpendingType"" FROM ""LedgerTransactions"" 
+    WHERE ""AccountId""=@aid AND ""CreatedAt"" >= @from AND ""CreatedAt"" <= @to AND ""SpendingType"" IS NOT NULL";
+ await using var cmd = new NpgsqlCommand(sql, conn);
+ cmd.Parameters.AddWithValue("aid", accountId);
+ cmd.Parameters.AddWithValue("from", from);
+ cmd.Parameters.AddWithValue("to", to);
+ await using var reader = await cmd.ExecuteReaderAsync();
+ while (await reader.ReadAsync())
+ {
+  var amount = reader.GetDecimal(0);
+  var spendingType = reader.IsDBNull(1) ? null : reader.GetString(1);
+  if (string.IsNullOrWhiteSpace(spendingType)) continue;
+  var normalized = spendingType.Trim().ToUpperInvariant();
+  switch (normalized)
+  {
+  case "FUN": fun += amount; break;
+  case "FIXED": fixedTotal += amount; break;
+  case "FUTURE": future += amount; break;
+  }
+ }
+ return new BudgetAggregationResult(fun, fixedTotal, future, fun + fixedTotal + future, from.ToString("O"), to.ToString("O"));
  }
 
  internal record TransactionResponse(Guid Id, Guid AccountId, decimal Amount, string Currency, string Type, string Description, DateTime CreatedAt);
@@ -1663,6 +2154,8 @@ partial class Program
  public static readonly ConcurrentDictionary<Guid, List<InMemAccount>> AccountsByUser = new();
  public static readonly ConcurrentDictionary<Guid, List<InMemTransaction>> TransactionsByUser = new();
  public static readonly ConcurrentDictionary<Guid, List<InMemPayee>> PayeesByUser = new();
+ public static readonly ConcurrentDictionary<Guid, List<InMemBankConnection>> BankConnectionsByUser = new();
+ public static readonly ConcurrentDictionary<Guid, List<InMemExternalBankAccount>> ExternalBankAccountsByUser = new();
  }
 
  internal class InMemAccount
@@ -1677,10 +2170,35 @@ partial class Program
  public DateTime UpdatedAt { get; set; }
  }
 
- internal record InMemTransaction(Guid Id, Guid AccountId, Guid UserId, decimal Amount, string Currency, string Type, string Description, DateTime CreatedAt);
+ internal record InMemTransaction(Guid Id, Guid AccountId, Guid UserId, decimal Amount, string Currency, string Type, string Description, DateTime CreatedAt, string? SpendingType = null);
  internal record InMemPayee(Guid Id, Guid UserId, string Name, string AccountNumber, DateTime CreatedAt);
 
+ internal class InMemBankConnection
+ {
+ public Guid Id { get; set; }
+ public Guid UserId { get; set; }
+ public string BankId { get; set; } = string.Empty;
+ public string BankName { get; set; } = string.Empty;
+ public string BankLogo { get; set; } = string.Empty;
+ public string Status { get; set; } = "Active";
+ public DateTime ConnectedAt { get; set; }
+ }
+
+ internal class InMemExternalBankAccount
+ {
+ public Guid Id { get; set; }
+ public Guid BankConnectionId { get; set; }
+ public Guid UserId { get; set; }
+ public string AccountName { get; set; } = string.Empty;
+ public string AccountType { get; set; } = string.Empty;
+ public string AccountNumber { get; set; } = string.Empty;
+ public decimal Balance { get; set; }
+ public string Currency { get; set; } = "NZD";
+ public DateTime LastSyncedAt { get; set; }
+ }
+
  internal record CreateAccountRequest(string? AccountType, string? Currency, decimal? InitialDeposit);
+ internal record ConnectBankRequest(string BankId);
  internal record CreatePayeeRequest(string? Name, string? AccountNumber);
  internal record CreatePaymentRequest(Guid AccountId, decimal Amount, string? PayeeName, string? PayeeAccountNumber, string? Description);
 
@@ -1734,13 +2252,17 @@ partial class Program
  await a2.ExecuteNonQueryAsync();
  }
 
- // Ensure transactions
+ // Ensure transactions with SpendingType for budget tracking
  var t1 = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
  var t2 = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
  var t3 = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
- var insTrx = @"INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""CreatedAt"")
- SELECT @id, @aid, @uid, @amt, 'NZD', @typ, @desc, NOW() - @ago
+ var t4 = Guid.Parse("11111111-1111-1111-1111-111111111111");
+ var t5 = Guid.Parse("22222222-2222-2222-2222-222222222222");
+ var t6 = Guid.Parse("33333333-3333-3333-3333-333333333333");
+ var insTrx = @"INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""SpendingType"", ""CreatedAt"")
+ SELECT @id, @aid, @uid, @amt, 'NZD', @typ, @desc, @stype, NOW() - @ago
  WHERE NOT EXISTS (SELECT 1 FROM ""LedgerTransactions"" WHERE ""Id""=@id)";
+ // Salary deposit - Fixed income
  await using (var ti = new NpgsqlCommand(insTrx, conn))
  {
  ti.Parameters.AddWithValue("id", t1);
@@ -1749,9 +2271,11 @@ partial class Program
  ti.Parameters.AddWithValue("amt",100.00m);
  ti.Parameters.AddWithValue("typ", "credit");
  ti.Parameters.AddWithValue("desc", "Salary deposit");
+ ti.Parameters.AddWithValue("stype", "Fixed");
  ti.Parameters.AddWithValue("ago", TimeSpan.FromDays(1));
  await ti.ExecuteNonQueryAsync();
  }
+ // Grocery shopping - Fixed expense
  await using (var tg = new NpgsqlCommand(insTrx, conn))
  {
  tg.Parameters.AddWithValue("id", t2);
@@ -1760,9 +2284,11 @@ partial class Program
  tg.Parameters.AddWithValue("amt",50.00m);
  tg.Parameters.AddWithValue("typ", "debit");
  tg.Parameters.AddWithValue("desc", "Grocery shopping");
+ tg.Parameters.AddWithValue("stype", "Fixed");
  tg.Parameters.AddWithValue("ago", TimeSpan.FromDays(2));
  await tg.ExecuteNonQueryAsync();
  }
+ // Transfer to savings - Future
  await using (var tt = new NpgsqlCommand(insTrx, conn))
  {
  tt.Parameters.AddWithValue("id", t3);
@@ -1771,8 +2297,48 @@ partial class Program
  tt.Parameters.AddWithValue("amt",500.00m);
  tt.Parameters.AddWithValue("typ", "credit");
  tt.Parameters.AddWithValue("desc", "Transfer from checking");
+ tt.Parameters.AddWithValue("stype", "Future");
  tt.Parameters.AddWithValue("ago", TimeSpan.FromDays(3));
  await tt.ExecuteNonQueryAsync();
+ }
+ // Restaurant dinner - Fun
+ await using (var t4cmd = new NpgsqlCommand(insTrx, conn))
+ {
+ t4cmd.Parameters.AddWithValue("id", t4);
+ t4cmd.Parameters.AddWithValue("aid", acc1);
+ t4cmd.Parameters.AddWithValue("uid", userId);
+ t4cmd.Parameters.AddWithValue("amt", 75.00m);
+ t4cmd.Parameters.AddWithValue("typ", "debit");
+ t4cmd.Parameters.AddWithValue("desc", "Restaurant dinner");
+ t4cmd.Parameters.AddWithValue("stype", "Fun");
+ t4cmd.Parameters.AddWithValue("ago", TimeSpan.FromDays(4));
+ await t4cmd.ExecuteNonQueryAsync();
+ }
+ // Movie tickets - Fun
+ await using (var t5cmd = new NpgsqlCommand(insTrx, conn))
+ {
+ t5cmd.Parameters.AddWithValue("id", t5);
+ t5cmd.Parameters.AddWithValue("aid", acc1);
+ t5cmd.Parameters.AddWithValue("uid", userId);
+ t5cmd.Parameters.AddWithValue("amt", 25.00m);
+ t5cmd.Parameters.AddWithValue("typ", "debit");
+ t5cmd.Parameters.AddWithValue("desc", "Movie tickets");
+ t5cmd.Parameters.AddWithValue("stype", "Fun");
+ t5cmd.Parameters.AddWithValue("ago", TimeSpan.FromDays(5));
+ await t5cmd.ExecuteNonQueryAsync();
+ }
+ // Investment contribution - Future
+ await using (var t6cmd = new NpgsqlCommand(insTrx, conn))
+ {
+ t6cmd.Parameters.AddWithValue("id", t6);
+ t6cmd.Parameters.AddWithValue("aid", acc2);
+ t6cmd.Parameters.AddWithValue("uid", userId);
+ t6cmd.Parameters.AddWithValue("amt", 200.00m);
+ t6cmd.Parameters.AddWithValue("typ", "debit");
+ t6cmd.Parameters.AddWithValue("desc", "Investment contribution");
+ t6cmd.Parameters.AddWithValue("stype", "Future");
+ t6cmd.Parameters.AddWithValue("ago", TimeSpan.FromDays(6));
+ await t6cmd.ExecuteNonQueryAsync();
  }
  }
 
@@ -1791,16 +2357,19 @@ partial class Program
  var accountsCount = await CountAsync("SELECT COUNT(1) FROM \"LedgerAccounts\"");
  var transactionsCount = await CountAsync("SELECT COUNT(1) FROM \"LedgerTransactions\"");
  var demoTxCount = await CountAsync("SELECT COUNT(1) FROM \"LedgerTransactions\" WHERE \"Id\" IN ('dddddddd-dddd-dddd-dddd-dddddddddddd','eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee','ffffffff-ffff-ffff-ffff-ffffffffffff')");
- var appliedMigrations = new List<string>();
- await using (var cmd = new NpgsqlCommand("SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\"", conn))
- await using (var rdr = await cmd.ExecuteReaderAsync())
- {
- while (await rdr.ReadAsync()) appliedMigrations.Add(rdr.GetString(0));
- }
- return new SeedStatus(accountsCount, transactionsCount, demoTxCount >0, appliedMigrations);
- }
+  var appliedMigrations = new List<string>();
+  await using (var cmd = new NpgsqlCommand("SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\"", conn))
+  {
+   await using (var rdr = await cmd.ExecuteReaderAsync())
+   {
+    while (await rdr.ReadAsync())
+     appliedMigrations.Add(rdr.GetString(0));
+   }
+  }
+  return new SeedStatus(accountsCount, transactionsCount, demoTxCount >0, appliedMigrations);
+  }
 
- // Destructive reset of ledger schema on demand (drop tables and clear EF history entries for this context)
+ // Destructive reset of ledger schema on demand (drop tables and clear EF history entries for this context's migrations)
  static async Task ResetLedgerSchemaAsync(IConfiguration cfg)
  {
  await using var conn = new NpgsqlConnection(GetConnectionString(cfg));
@@ -1856,7 +2425,7 @@ DROP TABLE IF EXISTS ""LedgerAccounts"" CASCADE;";
  );
  CREATE UNIQUE INDEX IF NOT EXISTS ""IX_LedgerAccounts_AccountNumber"" ON ""LedgerAccounts"" (""AccountNumber"");
 
- CREATE TABLE IF NOT EXISTS ""LedgerTransactions"" (
+  CREATE TABLE IF NOT EXISTS ""LedgerTransactions"" (
  ""Id"" uuid NOT NULL PRIMARY KEY,
  ""AccountId"" uuid NOT NULL,
  ""UserId"" uuid NOT NULL,
@@ -1864,10 +2433,17 @@ DROP TABLE IF EXISTS ""LedgerAccounts"" CASCADE;";
  ""Currency"" character varying(3) NOT NULL,
  ""Type"" character varying(10) NOT NULL,
  ""Description"" character varying(500) NOT NULL,
+ ""SpendingType"" character varying(20),
  ""CreatedAt"" timestamp with time zone NOT NULL
  );
  CREATE INDEX IF NOT EXISTS ""IX_LedgerTransactions_AccountId"" ON ""LedgerTransactions"" (""AccountId"");
  CREATE INDEX IF NOT EXISTS ""IX_LedgerTransactions_UserId"" ON ""LedgerTransactions"" (""UserId"");
+ -- Add SpendingType column if missing (for existing tables)
+ DO $$ BEGIN
+   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='LedgerTransactions' AND column_name='SpendingType') THEN
+     ALTER TABLE ""LedgerTransactions"" ADD COLUMN ""SpendingType"" character varying(20);
+   END IF;
+ END $$;
 
  CREATE TABLE IF NOT EXISTS ""LedgerPayees"" (
  ""Id"" uuid NOT NULL PRIMARY KEY,

@@ -11,17 +11,17 @@
   },
   "Routes": [
     {
-      "DownstreamPathTemplate": "/users/{everything}",
+      "DownstreamPathTemplate": "/api/users/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5000 }],
+      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5001 }],
       "UpstreamPathTemplate": "/api/users/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
       "Priority": 0
     },
     {
-      "DownstreamPathTemplate": "/accounts/{everything}",
+      "DownstreamPathTemplate": "/api/accounts/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5000 }],
+      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5002 }],
       "UpstreamPathTemplate": "/api/accounts/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
       "AuthenticationOptions": {
@@ -30,15 +30,26 @@
       }
     },
     {
-      "DownstreamPathTemplate": "/transactions/{everything}",
+      "DownstreamPathTemplate": "/api/bankconnections/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5000 }],
-      "UpstreamPathTemplate": "/api/transactions/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5002 }],
+      "UpstreamPathTemplate": "/api/bankconnections/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer",
         "AllowedScopes": []
       }
-    }
-  ]
+    },
+    {
+        "DownstreamPathTemplate": "/api/transactions/{everything}",
+        "DownstreamScheme": "http",
+        "DownstreamHostAndPorts": [{ "Host": "127.0.0.1", "Port": 5003 }],
+        "UpstreamPathTemplate": "/api/transactions/{everything}",
+        "UpstreamHttpMethod": ["GET", "POST"],
+        "AuthenticationOptions": {
+          "AuthenticationProviderKey": "Bearer",
+          "AllowedScopes": []
+        }
+      }
+    ]
 }

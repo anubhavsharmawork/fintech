@@ -25,7 +25,8 @@ public class UserServiceTests
         var inMemoryConfig = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["JWT_SIGNING_KEY"] = "test-signing-key-012345678901234567890123456789"
+                ["JWT_SIGNING_KEY"] = "test-signing-key-012345678901234567890123456789",
+                ["RegistrationDisabled"] = "false"
             })
             .Build();
 
@@ -58,7 +59,7 @@ public class UserServiceTests
         var token = GetAnonProp(ok.Value, "token");
         Assert.False(string.IsNullOrWhiteSpace(token));
 
-        var user = await db.Users.SingleOrDefaultAsync(u => u.Email == request.Email, TestContext.Current.CancellationToken);
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Email == request.Email, CancellationToken.None);
         Assert.NotNull(user);
         Assert.Equal("John", user!.FirstName);
         Assert.True(user.IsEmailVerified);
@@ -85,7 +86,7 @@ public class UserServiceTests
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await db.SaveChangesAsync(CancellationToken.None);
 
         // Act
         var result = await controller.Register(new RegisterRequest("dup@example.com", "Password#123", "John", "Doe"));
@@ -113,7 +114,7 @@ public class UserServiceTests
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await db.SaveChangesAsync(CancellationToken.None);
 
         // Act
         var result = await controller.Login(new LoginRequest(email, "Password#123"));
@@ -143,7 +144,7 @@ public class UserServiceTests
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await db.SaveChangesAsync(CancellationToken.None);
 
         // Act
         var result = await controller.Login(new LoginRequest(email, "wrong"));
@@ -185,7 +186,7 @@ public class UserServiceTests
             UpdatedAt = DateTime.UtcNow
         };
         db.Users.Add(user);
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await db.SaveChangesAsync(CancellationToken.None);
 
         var identity = new ClaimsIdentity(new[]
         {
@@ -220,7 +221,7 @@ public class UserServiceTests
             UpdatedAt = DateTime.UtcNow
         };
         db.Users.Add(user);
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await db.SaveChangesAsync(CancellationToken.None);
 
         // Act
         var result = await controller.VerifyEmail(new VerifyEmailRequest(user.Id, "dummy"));
@@ -229,7 +230,7 @@ public class UserServiceTests
         var ok = Assert.IsType<OkObjectResult>(result);
         Assert.Equal("Email verified successfully", GetAnonProp(ok.Value, "message"));
 
-        var updated = await db.Users.FindAsync(new object[] { user.Id }, TestContext.Current.CancellationToken);
+        var updated = await db.Users.FindAsync(new object[] { user.Id }, CancellationToken.None);
         Assert.NotNull(updated);
         Assert.True(updated!.IsEmailVerified);
         Assert.True(updated.UpdatedAt >= user.UpdatedAt);

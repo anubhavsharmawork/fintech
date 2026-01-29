@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Accounts from './pages/Accounts';
 import Transactions from './pages/Transactions';
+import Budget from './pages/Budget';
+import Privacy from './pages/Privacy';
 import { getToken, onAuthChange } from './auth';
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -45,6 +47,8 @@ function App() {
  <Route path="/register" element={<Register />} />
  <Route path="/accounts" element={<RequireAuth><Accounts /></RequireAuth>} />
  <Route path="/transactions" element={<RequireAuth><Transactions /></RequireAuth>} />
+ <Route path="/budget" element={<RequireAuth><Budget /></RequireAuth>} />
+ <Route path="/privacy" element={<Privacy />} />
  </Routes>
  </Layout>
  </Router>

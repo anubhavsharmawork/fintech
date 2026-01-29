@@ -1,0 +1,2174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="1" branch-rate="0.9745999999999999" version="1.9" timestamp="1769577883" lines-covered="524" lines-valid="524" branches-covered="154" branches-valid="158">
+  <sources>
+    <source></source>
+  </sources>
+  <packages>
+    <package name="AccountService" line-rate="1" branch-rate="0.9444" complexity="55">
+      <classes>
+        <class name="AccountService.Utilities.EthereumUtility" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Utilities/EthereumUtility.cs" line-rate="1" branch-rate="1" complexity="8">
+          <methods>
+            <method name="ValidateAndChecksumAddress" signature="(System.String)" line-rate="1" branch-rate="1" complexity="8">
+              <lines>
+                <line number="12" hits="24" branch="False" />
+                <line number="13" hits="24" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="29" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="14" hits="4" branch="False" />
+                <line number="15" hits="4" branch="False" />
+                <line number="18" hits="20" branch="False" />
+                <line number="20" hits="20" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="132" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="21" hits="3" branch="False" />
+                <line number="22" hits="3" branch="False" />
+                <line number="25" hits="17" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="216" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="26" hits="4" branch="False" />
+                <line number="27" hits="4" branch="False" />
+                <line number="30" hits="13" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="309" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="31" hits="4" branch="False" />
+                <line number="32" hits="4" branch="False" />
+                <line number="35" hits="9" branch="False" />
+                <line number="36" hits="9" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="12" hits="24" branch="False" />
+            <line number="13" hits="24" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="29" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="14" hits="4" branch="False" />
+            <line number="15" hits="4" branch="False" />
+            <line number="18" hits="20" branch="False" />
+            <line number="20" hits="20" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="132" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="21" hits="3" branch="False" />
+            <line number="22" hits="3" branch="False" />
+            <line number="25" hits="17" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="216" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="26" hits="4" branch="False" />
+            <line number="27" hits="4" branch="False" />
+            <line number="30" hits="13" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="309" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="31" hits="4" branch="False" />
+            <line number="32" hits="4" branch="False" />
+            <line number="35" hits="9" branch="False" />
+            <line number="36" hits="9" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Data.Account" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Data/AccountDbContext.cs" line-rate="1" branch-rate="1" complexity="12">
+          <methods>
+            <method name="get_Id" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="184" branch="False" />
+              </lines>
+            </method>
+            <method name="get_UserId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="79" branch="False" />
+              </lines>
+            </method>
+            <method name="get_AccountNumber" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="232" branch="False" />
+              </lines>
+            </method>
+            <method name="get_AccountType" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="212" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Balance" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="142" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Currency" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="12" hits="217" branch="False" />
+              </lines>
+            </method>
+            <method name="get_CreatedAt" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="13" hits="89" branch="False" />
+              </lines>
+            </method>
+            <method name="get_UpdatedAt" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="14" hits="79" branch="False" />
+              </lines>
+            </method>
+            <method name="get_IsCrypto" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="15" hits="84" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Blockchain" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="16" hits="4" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Address" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="17" hits="4" branch="False" />
+              </lines>
+            </method>
+            <method name="get_TokenSymbol" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="18" hits="84" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="184" branch="False" />
+            <line number="8" hits="79" branch="False" />
+            <line number="9" hits="232" branch="False" />
+            <line number="10" hits="212" branch="False" />
+            <line number="11" hits="142" branch="False" />
+            <line number="12" hits="217" branch="False" />
+            <line number="13" hits="89" branch="False" />
+            <line number="14" hits="79" branch="False" />
+            <line number="15" hits="84" branch="False" />
+            <line number="16" hits="4" branch="False" />
+            <line number="17" hits="4" branch="False" />
+            <line number="18" hits="84" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Data.AccountDbContext" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Data/AccountDbContext.cs" line-rate="1" branch-rate="1" complexity="3">
+          <methods>
+            <method name="get_Accounts" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="25" hits="175" branch="False" />
+              </lines>
+            </method>
+            <method name="OnModelCreating" signature="(Microsoft.EntityFrameworkCore.ModelBuilder)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="28" hits="1" branch="False" />
+                <line number="29" hits="1" branch="False" />
+                <line number="30" hits="1" branch="False" />
+                <line number="31" hits="1" branch="False" />
+                <line number="32" hits="1" branch="False" />
+                <line number="33" hits="1" branch="False" />
+                <line number="34" hits="1" branch="False" />
+                <line number="35" hits="1" branch="False" />
+                <line number="36" hits="1" branch="False" />
+                <line number="37" hits="1" branch="False" />
+                <line number="38" hits="1" branch="False" />
+                <line number="39" hits="1" branch="False" />
+                <line number="40" hits="1" branch="False" />
+                <line number="41" hits="2" branch="False" />
+                <line number="42" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(Microsoft.EntityFrameworkCore.DbContextOptions`1&lt;AccountService.Data.AccountDbContext&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="23" hits="201" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="25" hits="175" branch="False" />
+            <line number="28" hits="1" branch="False" />
+            <line number="29" hits="1" branch="False" />
+            <line number="30" hits="1" branch="False" />
+            <line number="31" hits="1" branch="False" />
+            <line number="32" hits="1" branch="False" />
+            <line number="33" hits="1" branch="False" />
+            <line number="34" hits="1" branch="False" />
+            <line number="35" hits="1" branch="False" />
+            <line number="36" hits="1" branch="False" />
+            <line number="37" hits="1" branch="False" />
+            <line number="38" hits="1" branch="False" />
+            <line number="39" hits="1" branch="False" />
+            <line number="40" hits="1" branch="False" />
+            <line number="41" hits="2" branch="False" />
+            <line number="42" hits="1" branch="False" />
+            <line number="23" hits="201" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Controllers.AccountsController" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Controllers/AccountsController.cs" line-rate="1" branch-rate="1" complexity="2">
+          <methods>
+            <method name="GenerateAccountNumber" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="93" hits="45" branch="False" />
+                <line number="94" hits="45" branch="False" />
+                <line number="95" hits="45" branch="False" />
+                <line number="96" hits="45" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(AccountService.Data.AccountDbContext,Microsoft.Extensions.Logging.ILogger`1&lt;AccountService.Controllers.AccountsController&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="15" hits="59" branch="False" />
+                <line number="16" hits="59" branch="False" />
+                <line number="17" hits="59" branch="False" />
+                <line number="18" hits="59" branch="False" />
+                <line number="19" hits="59" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="93" hits="45" branch="False" />
+            <line number="94" hits="45" branch="False" />
+            <line number="95" hits="45" branch="False" />
+            <line number="96" hits="45" branch="False" />
+            <line number="15" hits="59" branch="False" />
+            <line number="16" hits="59" branch="False" />
+            <line number="17" hits="59" branch="False" />
+            <line number="18" hits="59" branch="False" />
+            <line number="19" hits="59" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Controllers.AccountsController/&lt;&gt;c" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Controllers/AccountsController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="&lt;GetAccounts&gt;b__3_0" signature="(AccountService.Data.Account)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="33" hits="19" branch="False" />
+                <line number="34" hits="19" branch="False" />
+                <line number="35" hits="19" branch="False" />
+                <line number="36" hits="19" branch="False" />
+                <line number="37" hits="19" branch="False" />
+                <line number="38" hits="19" branch="False" />
+                <line number="39" hits="19" branch="False" />
+                <line number="40" hits="19" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="33" hits="19" branch="False" />
+            <line number="34" hits="19" branch="False" />
+            <line number="35" hits="19" branch="False" />
+            <line number="36" hits="19" branch="False" />
+            <line number="37" hits="19" branch="False" />
+            <line number="38" hits="19" branch="False" />
+            <line number="39" hits="19" branch="False" />
+            <line number="40" hits="19" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Controllers.AccountsController/&lt;CreateAccount&gt;d__4" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Controllers/AccountsController.cs" line-rate="1" branch-rate="0.9" complexity="10">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="0.9" complexity="10">
+              <lines>
+                <line number="46" hits="47" branch="False" />
+                <line number="47" hits="47" branch="True" condition-coverage="83.33% (5/6)">
+                  <conditions>
+                    <condition number="61" type="jump" coverage="100%" />
+                    <condition number="93" type="jump" coverage="100%" />
+                    <condition number="128" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="48" hits="47" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="206" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="49" hits="2" branch="False" />
+                <line number="51" hits="45" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="355" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="52" hits="45" branch="False" />
+                <line number="53" hits="45" branch="False" />
+                <line number="54" hits="45" branch="False" />
+                <line number="55" hits="45" branch="False" />
+                <line number="56" hits="45" branch="False" />
+                <line number="57" hits="45" branch="False" />
+                <line number="58" hits="45" branch="False" />
+                <line number="59" hits="45" branch="False" />
+                <line number="60" hits="45" branch="False" />
+                <line number="61" hits="45" branch="False" />
+                <line number="63" hits="45" branch="False" />
+                <line number="64" hits="45" branch="False" />
+                <line number="66" hits="45" branch="False" />
+                <line number="68" hits="45" branch="False" />
+                <line number="69" hits="45" branch="False" />
+                <line number="70" hits="45" branch="False" />
+                <line number="71" hits="45" branch="False" />
+                <line number="72" hits="45" branch="False" />
+                <line number="73" hits="45" branch="False" />
+                <line number="74" hits="45" branch="False" />
+                <line number="75" hits="47" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="46" hits="47" branch="False" />
+            <line number="47" hits="47" branch="True" condition-coverage="83.33% (5/6)">
+              <conditions>
+                <condition number="61" type="jump" coverage="100%" />
+                <condition number="93" type="jump" coverage="100%" />
+                <condition number="128" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="48" hits="47" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="206" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="49" hits="2" branch="False" />
+            <line number="51" hits="45" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="355" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="52" hits="45" branch="False" />
+            <line number="53" hits="45" branch="False" />
+            <line number="54" hits="45" branch="False" />
+            <line number="55" hits="45" branch="False" />
+            <line number="56" hits="45" branch="False" />
+            <line number="57" hits="45" branch="False" />
+            <line number="58" hits="45" branch="False" />
+            <line number="59" hits="45" branch="False" />
+            <line number="60" hits="45" branch="False" />
+            <line number="61" hits="45" branch="False" />
+            <line number="63" hits="45" branch="False" />
+            <line number="64" hits="45" branch="False" />
+            <line number="66" hits="45" branch="False" />
+            <line number="68" hits="45" branch="False" />
+            <line number="69" hits="45" branch="False" />
+            <line number="70" hits="45" branch="False" />
+            <line number="71" hits="45" branch="False" />
+            <line number="72" hits="45" branch="False" />
+            <line number="73" hits="45" branch="False" />
+            <line number="74" hits="45" branch="False" />
+            <line number="75" hits="47" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Controllers.AccountsController/&lt;GetAccounts&gt;d__3" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Controllers/AccountsController.cs" line-rate="1" branch-rate="1" complexity="8">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="8">
+              <lines>
+                <line number="24" hits="10" branch="False" />
+                <line number="25" hits="10" branch="True" condition-coverage="100% (6/6)">
+                  <conditions>
+                    <condition number="72" type="jump" coverage="100%" />
+                    <condition number="104" type="jump" coverage="100%" />
+                    <condition number="139" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="26" hits="10" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="222" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="27" hits="2" branch="False" />
+                <line number="29" hits="8" branch="False" />
+                <line number="30" hits="8" branch="False" />
+                <line number="31" hits="8" branch="False" />
+                <line number="41" hits="10" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="24" hits="10" branch="False" />
+            <line number="25" hits="10" branch="True" condition-coverage="100% (6/6)">
+              <conditions>
+                <condition number="72" type="jump" coverage="100%" />
+                <condition number="104" type="jump" coverage="100%" />
+                <condition number="139" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="26" hits="10" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="222" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="27" hits="2" branch="False" />
+            <line number="29" hits="8" branch="False" />
+            <line number="30" hits="8" branch="False" />
+            <line number="31" hits="8" branch="False" />
+            <line number="41" hits="10" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Controllers.AccountsController/&lt;GetBalance&gt;d__5" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Controllers/AccountsController.cs" line-rate="1" branch-rate="0.9" complexity="10">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="0.9" complexity="10">
+              <lines>
+                <line number="80" hits="12" branch="False" />
+                <line number="81" hits="12" branch="True" condition-coverage="83.33% (5/6)">
+                  <conditions>
+                    <condition number="89" type="jump" coverage="100%" />
+                    <condition number="121" type="jump" coverage="100%" />
+                    <condition number="156" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="82" hits="12" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="239" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="83" hits="3" branch="False" />
+                <line number="85" hits="9" branch="False" />
+                <line number="86" hits="9" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="668" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="87" hits="4" branch="False" />
+                <line number="89" hits="5" branch="False" />
+                <line number="90" hits="12" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="80" hits="12" branch="False" />
+            <line number="81" hits="12" branch="True" condition-coverage="83.33% (5/6)">
+              <conditions>
+                <condition number="89" type="jump" coverage="100%" />
+                <condition number="121" type="jump" coverage="100%" />
+                <condition number="156" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="82" hits="12" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="239" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="83" hits="3" branch="False" />
+            <line number="85" hits="9" branch="False" />
+            <line number="86" hits="9" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="668" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="87" hits="4" branch="False" />
+            <line number="89" hits="5" branch="False" />
+            <line number="90" hits="12" branch="False" />
+          </lines>
+        </class>
+        <class name="AccountService.Controllers.CreateAccountRequest" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/AccountService/Controllers/AccountsController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="get_AccountType" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="99" hits="185" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="99" hits="185" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+    <package name="Contracts" line-rate="1" branch-rate="1" complexity="8">
+      <classes>
+        <class name="Contracts.Events.TransactionCreated" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/Contracts/Events/TransactionCreated.cs" line-rate="1" branch-rate="1" complexity="8">
+          <methods>
+            <method name="get_TransactionId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="4" hits="26" branch="False" />
+              </lines>
+            </method>
+            <method name="get_AccountId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="5" hits="4" branch="False" />
+              </lines>
+            </method>
+            <method name="get_UserId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="6" hits="9" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Amount" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="21" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Currency" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="20" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Type" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="14" branch="False" />
+              </lines>
+            </method>
+            <method name="get_CreatedAt" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(System.Guid,System.Guid,System.Guid,System.Decimal,System.String,System.String,System.DateTime)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="3" hits="64" branch="False" />
+                <line number="11" hits="64" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="4" hits="26" branch="False" />
+            <line number="5" hits="4" branch="False" />
+            <line number="6" hits="9" branch="False" />
+            <line number="7" hits="21" branch="False" />
+            <line number="8" hits="20" branch="False" />
+            <line number="9" hits="14" branch="False" />
+            <line number="10" hits="3" branch="False" />
+            <line number="3" hits="64" branch="False" />
+            <line number="11" hits="64" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+    <package name="NotificationService" line-rate="1" branch-rate="1" complexity="4">
+      <classes>
+        <class name="NotificationService.Consumers.TransactionCreatedConsumer" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/NotificationService/Consumers/TransactionCreatedConsumer.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(Microsoft.Extensions.Logging.ILogger`1&lt;NotificationService.Consumers.TransactionCreatedConsumer&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="3" branch="False" />
+                <line number="11" hits="3" branch="False" />
+                <line number="12" hits="3" branch="False" />
+                <line number="13" hits="3" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="3" branch="False" />
+            <line number="11" hits="3" branch="False" />
+            <line number="12" hits="3" branch="False" />
+            <line number="13" hits="3" branch="False" />
+          </lines>
+        </class>
+        <class name="NotificationService.Consumers.TransactionCreatedConsumer/&lt;Consume&gt;d__2" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/NotificationService/Consumers/TransactionCreatedConsumer.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="16" hits="5" branch="False" />
+                <line number="17" hits="5" branch="False" />
+                <line number="19" hits="5" branch="False" />
+                <line number="20" hits="5" branch="False" />
+                <line number="23" hits="5" branch="False" />
+                <line number="26" hits="5" branch="False" />
+                <line number="28" hits="5" branch="False" />
+                <line number="29" hits="5" branch="False" />
+                <line number="30" hits="5" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="16" hits="5" branch="False" />
+            <line number="17" hits="5" branch="False" />
+            <line number="19" hits="5" branch="False" />
+            <line number="20" hits="5" branch="False" />
+            <line number="23" hits="5" branch="False" />
+            <line number="26" hits="5" branch="False" />
+            <line number="28" hits="5" branch="False" />
+            <line number="29" hits="5" branch="False" />
+            <line number="30" hits="5" branch="False" />
+          </lines>
+        </class>
+        <class name="NotificationService.Consumers.TransactionCreatedConsumer/&lt;SendEmailNotification&gt;d__3" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/NotificationService/Consumers/TransactionCreatedConsumer.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="33" hits="5" branch="False" />
+                <line number="35" hits="5" branch="False" />
+                <line number="37" hits="5" branch="False" />
+                <line number="38" hits="5" branch="False" />
+                <line number="39" hits="5" branch="False" />
+                <line number="40" hits="5" branch="False" />
+                <line number="41" hits="5" branch="False" />
+                <line number="42" hits="5" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="33" hits="5" branch="False" />
+            <line number="35" hits="5" branch="False" />
+            <line number="37" hits="5" branch="False" />
+            <line number="38" hits="5" branch="False" />
+            <line number="39" hits="5" branch="False" />
+            <line number="40" hits="5" branch="False" />
+            <line number="41" hits="5" branch="False" />
+            <line number="42" hits="5" branch="False" />
+          </lines>
+        </class>
+        <class name="NotificationService.Consumers.TransactionCreatedConsumer/&lt;SendSmsNotification&gt;d__4" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/NotificationService/Consumers/TransactionCreatedConsumer.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="45" hits="5" branch="False" />
+                <line number="47" hits="5" branch="False" />
+                <line number="49" hits="5" branch="False" />
+                <line number="50" hits="5" branch="False" />
+                <line number="51" hits="5" branch="False" />
+                <line number="52" hits="5" branch="False" />
+                <line number="53" hits="5" branch="False" />
+                <line number="54" hits="5" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="45" hits="5" branch="False" />
+            <line number="47" hits="5" branch="False" />
+            <line number="49" hits="5" branch="False" />
+            <line number="50" hits="5" branch="False" />
+            <line number="51" hits="5" branch="False" />
+            <line number="52" hits="5" branch="False" />
+            <line number="53" hits="5" branch="False" />
+            <line number="54" hits="5" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+    <package name="TransactionService" line-rate="1" branch-rate="1" complexity="92">
+      <classes>
+        <class name="TransactionService.Services.BudgetAggregationService" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Services/BudgetAggregationService.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(TransactionService.Data.TransactionDbContext)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="12" hits="68" branch="False" />
+                <line number="13" hits="68" branch="False" />
+                <line number="14" hits="68" branch="False" />
+                <line number="15" hits="68" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="12" hits="68" branch="False" />
+            <line number="13" hits="68" branch="False" />
+            <line number="14" hits="68" branch="False" />
+            <line number="15" hits="68" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Services.BudgetAggregationService/&lt;GetBudgetAsync&gt;d__2" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Services/BudgetAggregationService.cs" line-rate="1" branch-rate="1" complexity="12">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="12">
+              <lines>
+                <line number="22" hits="63" branch="False" />
+                <line number="23" hits="63" branch="False" />
+                <line number="24" hits="63" branch="False" />
+                <line number="25" hits="63" branch="False" />
+                <line number="26" hits="63" branch="False" />
+                <line number="28" hits="61" branch="False" />
+                <line number="29" hits="61" branch="False" />
+                <line number="30" hits="61" branch="False" />
+                <line number="32" hits="343" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="1232" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="33" hits="80" branch="False" />
+                <line number="34" hits="80" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="719" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="35" hits="8" branch="False" />
+                <line number="36" hits="8" branch="False" />
+                <line number="39" hits="72" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="800" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="40" hits="9" branch="False" />
+                <line number="41" hits="9" branch="False" />
+                <line number="44" hits="63" branch="False" />
+                <line number="45" hits="63" branch="True" condition-coverage="100% (6/6)">
+                  <conditions>
+                    <condition number="931" type="jump" coverage="100%" />
+                    <condition number="955" type="jump" coverage="100%" />
+                    <condition number="979" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="48" hits="35" branch="False" />
+                <line number="49" hits="35" branch="False" />
+                <line number="51" hits="18" branch="False" />
+                <line number="52" hits="18" branch="False" />
+                <line number="54" hits="10" branch="False" />
+                <line number="55" hits="10" branch="False" />
+                <line number="57" hits="63" branch="False" />
+                <line number="59" hits="61" branch="False" />
+                <line number="60" hits="61" branch="False" />
+                <line number="61" hits="61" branch="False" />
+                <line number="62" hits="61" branch="False" />
+                <line number="63" hits="61" branch="False" />
+                <line number="64" hits="61" branch="False" />
+                <line number="65" hits="61" branch="False" />
+                <line number="66" hits="61" branch="False" />
+                <line number="67" hits="61" branch="False" />
+                <line number="68" hits="61" branch="False" />
+                <line number="69" hits="61" branch="False" />
+                <line number="70" hits="61" branch="False" />
+                <line number="71" hits="61" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="22" hits="63" branch="False" />
+            <line number="23" hits="63" branch="False" />
+            <line number="24" hits="63" branch="False" />
+            <line number="25" hits="63" branch="False" />
+            <line number="26" hits="63" branch="False" />
+            <line number="28" hits="61" branch="False" />
+            <line number="29" hits="61" branch="False" />
+            <line number="30" hits="61" branch="False" />
+            <line number="32" hits="343" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="1232" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="33" hits="80" branch="False" />
+            <line number="34" hits="80" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="719" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="35" hits="8" branch="False" />
+            <line number="36" hits="8" branch="False" />
+            <line number="39" hits="72" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="800" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="40" hits="9" branch="False" />
+            <line number="41" hits="9" branch="False" />
+            <line number="44" hits="63" branch="False" />
+            <line number="45" hits="63" branch="True" condition-coverage="100% (6/6)">
+              <conditions>
+                <condition number="931" type="jump" coverage="100%" />
+                <condition number="955" type="jump" coverage="100%" />
+                <condition number="979" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="48" hits="35" branch="False" />
+            <line number="49" hits="35" branch="False" />
+            <line number="51" hits="18" branch="False" />
+            <line number="52" hits="18" branch="False" />
+            <line number="54" hits="10" branch="False" />
+            <line number="55" hits="10" branch="False" />
+            <line number="57" hits="63" branch="False" />
+            <line number="59" hits="61" branch="False" />
+            <line number="60" hits="61" branch="False" />
+            <line number="61" hits="61" branch="False" />
+            <line number="62" hits="61" branch="False" />
+            <line number="63" hits="61" branch="False" />
+            <line number="64" hits="61" branch="False" />
+            <line number="65" hits="61" branch="False" />
+            <line number="66" hits="61" branch="False" />
+            <line number="67" hits="61" branch="False" />
+            <line number="68" hits="61" branch="False" />
+            <line number="69" hits="61" branch="False" />
+            <line number="70" hits="61" branch="False" />
+            <line number="71" hits="61" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Models.Dtos.BudgetAggregationDto" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Models/Dtos/BudgetAggregationDto.cs" line-rate="1" branch-rate="1" complexity="5">
+          <methods>
+            <method name="get_Fun" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="97" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Fixed" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="85" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Future" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="79" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Total" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="94" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Period" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="144" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="97" branch="False" />
+            <line number="8" hits="85" branch="False" />
+            <line number="9" hits="79" branch="False" />
+            <line number="10" hits="94" branch="False" />
+            <line number="11" hits="144" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Models.Dtos.PeriodDto" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Models/Dtos/BudgetAggregationDto.cs" line-rate="1" branch-rate="1" complexity="2">
+          <methods>
+            <method name="get_From" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="16" hits="202" branch="False" />
+              </lines>
+            </method>
+            <method name="get_To" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="17" hits="202" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="16" hits="202" branch="False" />
+            <line number="17" hits="202" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Models.Dtos.CreatePaymentRequestDto" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Models/Dtos/CreatePaymentRequestDto.cs" line-rate="1" branch-rate="1" complexity="9">
+          <methods>
+            <method name="get_AccountId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="91" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Amount" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="91" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Type" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="157" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Currency" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="180" branch="False" />
+              </lines>
+            </method>
+            <method name="get_PayeeName" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="53" branch="False" />
+              </lines>
+            </method>
+            <method name="get_PayeeAccountNumber" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="12" hits="3" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Description" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="13" hits="50" branch="False" />
+              </lines>
+            </method>
+            <method name="get_SpendingType" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="14" hits="142" branch="False" />
+              </lines>
+            </method>
+            <method name="get_TxHash" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="15" hits="54" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="91" branch="False" />
+            <line number="8" hits="91" branch="False" />
+            <line number="9" hits="157" branch="False" />
+            <line number="10" hits="180" branch="False" />
+            <line number="11" hits="53" branch="False" />
+            <line number="12" hits="3" branch="False" />
+            <line number="13" hits="50" branch="False" />
+            <line number="14" hits="142" branch="False" />
+            <line number="15" hits="54" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Data.Transaction" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Data/TransactionDbContext.cs" line-rate="1" branch-rate="1" complexity="10">
+          <methods>
+            <method name="get_Id" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="298" branch="False" />
+              </lines>
+            </method>
+            <method name="get_AccountId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="297" branch="False" />
+              </lines>
+            </method>
+            <method name="get_UserId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="207" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Amount" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="328" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Currency" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="507" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Type" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="12" hits="507" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Description" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="13" hits="464" branch="False" />
+              </lines>
+            </method>
+            <method name="get_CreatedAt" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="14" hits="255" branch="False" />
+              </lines>
+            </method>
+            <method name="get_SpendingType" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="15" hits="430" branch="False" />
+              </lines>
+            </method>
+            <method name="get_TxHash" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="16" hits="105" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="298" branch="False" />
+            <line number="8" hits="297" branch="False" />
+            <line number="9" hits="207" branch="False" />
+            <line number="10" hits="328" branch="False" />
+            <line number="11" hits="507" branch="False" />
+            <line number="12" hits="507" branch="False" />
+            <line number="13" hits="464" branch="False" />
+            <line number="14" hits="255" branch="False" />
+            <line number="15" hits="430" branch="False" />
+            <line number="16" hits="105" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Data.TransactionDbContext" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Data/TransactionDbContext.cs" line-rate="1" branch-rate="1" complexity="3">
+          <methods>
+            <method name="get_Transactions" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="23" hits="354" branch="False" />
+              </lines>
+            </method>
+            <method name="OnModelCreating" signature="(Microsoft.EntityFrameworkCore.ModelBuilder)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="26" hits="1" branch="False" />
+                <line number="27" hits="1" branch="False" />
+                <line number="28" hits="1" branch="False" />
+                <line number="29" hits="1" branch="False" />
+                <line number="30" hits="1" branch="False" />
+                <line number="31" hits="1" branch="False" />
+                <line number="32" hits="1" branch="False" />
+                <line number="33" hits="1" branch="False" />
+                <line number="34" hits="1" branch="False" />
+                <line number="35" hits="1" branch="False" />
+                <line number="36" hits="1" branch="False" />
+                <line number="37" hits="1" branch="False" />
+                <line number="38" hits="1" branch="False" />
+                <line number="39" hits="1" branch="False" />
+                <line number="40" hits="2" branch="False" />
+                <line number="41" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(Microsoft.EntityFrameworkCore.DbContextOptions`1&lt;TransactionService.Data.TransactionDbContext&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="21" hits="414" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="23" hits="354" branch="False" />
+            <line number="26" hits="1" branch="False" />
+            <line number="27" hits="1" branch="False" />
+            <line number="28" hits="1" branch="False" />
+            <line number="29" hits="1" branch="False" />
+            <line number="30" hits="1" branch="False" />
+            <line number="31" hits="1" branch="False" />
+            <line number="32" hits="1" branch="False" />
+            <line number="33" hits="1" branch="False" />
+            <line number="34" hits="1" branch="False" />
+            <line number="35" hits="1" branch="False" />
+            <line number="36" hits="1" branch="False" />
+            <line number="37" hits="1" branch="False" />
+            <line number="38" hits="1" branch="False" />
+            <line number="39" hits="1" branch="False" />
+            <line number="40" hits="2" branch="False" />
+            <line number="41" hits="1" branch="False" />
+            <line number="21" hits="414" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Controllers.BudgetController" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Controllers/BudgetController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(TransactionService.Services.BudgetAggregationService)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="14" hits="14" branch="False" />
+                <line number="15" hits="14" branch="False" />
+                <line number="16" hits="14" branch="False" />
+                <line number="17" hits="14" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="14" hits="14" branch="False" />
+            <line number="15" hits="14" branch="False" />
+            <line number="16" hits="14" branch="False" />
+            <line number="17" hits="14" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Controllers.BudgetController/&lt;GetBudget&gt;d__2" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Controllers/BudgetController.cs" line-rate="1" branch-rate="1" complexity="8">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="8">
+              <lines>
+                <line number="26" hits="14" branch="False" />
+                <line number="27" hits="14" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="56" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="28" hits="1" branch="False" />
+                <line number="29" hits="1" branch="False" />
+                <line number="32" hits="13" branch="True" condition-coverage="100% (6/6)">
+                  <conditions>
+                    <condition number="162" type="jump" coverage="100%" />
+                    <condition number="195" type="jump" coverage="100%" />
+                    <condition number="249" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="33" hits="3" branch="False" />
+                <line number="34" hits="3" branch="False" />
+                <line number="37" hits="10" branch="False" />
+                <line number="38" hits="9" branch="False" />
+                <line number="39" hits="13" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="26" hits="14" branch="False" />
+            <line number="27" hits="14" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="56" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="28" hits="1" branch="False" />
+            <line number="29" hits="1" branch="False" />
+            <line number="32" hits="13" branch="True" condition-coverage="100% (6/6)">
+              <conditions>
+                <condition number="162" type="jump" coverage="100%" />
+                <condition number="195" type="jump" coverage="100%" />
+                <condition number="249" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="33" hits="3" branch="False" />
+            <line number="34" hits="3" branch="False" />
+            <line number="37" hits="10" branch="False" />
+            <line number="38" hits="9" branch="False" />
+            <line number="39" hits="13" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Controllers.TransactionsController" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Controllers/TransactionsController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name=".ctor" signature="(TransactionService.Data.TransactionDbContext,MassTransit.IPublishEndpoint,Microsoft.Extensions.Logging.ILogger`1&lt;TransactionService.Controllers.TransactionsController&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="20" hits="58" branch="False" />
+                <line number="21" hits="58" branch="False" />
+                <line number="22" hits="58" branch="False" />
+                <line number="23" hits="58" branch="False" />
+                <line number="24" hits="58" branch="False" />
+                <line number="25" hits="58" branch="False" />
+                <line number="26" hits="58" branch="False" />
+                <line number="27" hits="58" branch="False" />
+                <line number="28" hits="58" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="20" hits="58" branch="False" />
+            <line number="21" hits="58" branch="False" />
+            <line number="22" hits="58" branch="False" />
+            <line number="23" hits="58" branch="False" />
+            <line number="24" hits="58" branch="False" />
+            <line number="25" hits="58" branch="False" />
+            <line number="26" hits="58" branch="False" />
+            <line number="27" hits="58" branch="False" />
+            <line number="28" hits="58" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Controllers.TransactionsController/&lt;&gt;c" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Controllers/TransactionsController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="&lt;GetTransactions&gt;b__4_2" signature="(TransactionService.Data.Transaction)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="47" hits="19" branch="False" />
+                <line number="48" hits="19" branch="False" />
+                <line number="49" hits="19" branch="False" />
+                <line number="50" hits="19" branch="False" />
+                <line number="51" hits="19" branch="False" />
+                <line number="52" hits="19" branch="False" />
+                <line number="53" hits="19" branch="False" />
+                <line number="54" hits="19" branch="False" />
+                <line number="55" hits="19" branch="False" />
+                <line number="56" hits="19" branch="False" />
+                <line number="57" hits="19" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="47" hits="19" branch="False" />
+            <line number="48" hits="19" branch="False" />
+            <line number="49" hits="19" branch="False" />
+            <line number="50" hits="19" branch="False" />
+            <line number="51" hits="19" branch="False" />
+            <line number="52" hits="19" branch="False" />
+            <line number="53" hits="19" branch="False" />
+            <line number="54" hits="19" branch="False" />
+            <line number="55" hits="19" branch="False" />
+            <line number="56" hits="19" branch="False" />
+            <line number="57" hits="19" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Controllers.TransactionsController/&lt;CreateTransaction&gt;d__5" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Controllers/TransactionsController.cs" line-rate="1" branch-rate="1" complexity="22">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="22">
+              <lines>
+                <line number="63" hits="47" branch="False" />
+                <line number="64" hits="47" branch="True" condition-coverage="100% (6/6)">
+                  <conditions>
+                    <condition number="72" type="jump" coverage="100%" />
+                    <condition number="104" type="jump" coverage="100%" />
+                    <condition number="139" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="65" hits="47" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="217" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="66" hits="3" branch="False" />
+                <line number="68" hits="44" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="289" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="69" hits="44" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="348" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="70" hits="3" branch="False" />
+                <line number="71" hits="3" branch="False" />
+                <line number="74" hits="41" branch="False" />
+                <line number="75" hits="41" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="472" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="76" hits="41" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="545" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="77" hits="41" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="627" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="78" hits="41" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="700" type="jump" coverage="100%" />
+                    <condition number="732" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="80" hits="41" branch="False" />
+                <line number="81" hits="41" branch="False" />
+                <line number="82" hits="41" branch="False" />
+                <line number="83" hits="41" branch="False" />
+                <line number="84" hits="41" branch="False" />
+                <line number="85" hits="41" branch="False" />
+                <line number="86" hits="41" branch="False" />
+                <line number="87" hits="41" branch="False" />
+                <line number="88" hits="41" branch="False" />
+                <line number="89" hits="41" branch="False" />
+                <line number="90" hits="41" branch="False" />
+                <line number="91" hits="41" branch="False" />
+                <line number="92" hits="41" branch="False" />
+                <line number="94" hits="41" branch="False" />
+                <line number="95" hits="41" branch="False" />
+                <line number="97" hits="41" branch="False" />
+                <line number="98" hits="41" branch="False" />
+                <line number="99" hits="41" branch="False" />
+                <line number="100" hits="41" branch="False" />
+                <line number="101" hits="41" branch="False" />
+                <line number="102" hits="41" branch="False" />
+                <line number="103" hits="41" branch="False" />
+                <line number="104" hits="41" branch="False" />
+                <line number="105" hits="41" branch="False" />
+                <line number="107" hits="41" branch="False" />
+                <line number="109" hits="41" branch="False" />
+                <line number="110" hits="41" branch="False" />
+                <line number="112" hits="41" branch="False" />
+                <line number="113" hits="41" branch="False" />
+                <line number="114" hits="41" branch="False" />
+                <line number="115" hits="41" branch="False" />
+                <line number="116" hits="41" branch="False" />
+                <line number="117" hits="41" branch="False" />
+                <line number="118" hits="41" branch="False" />
+                <line number="119" hits="41" branch="False" />
+                <line number="120" hits="41" branch="False" />
+                <line number="121" hits="41" branch="False" />
+                <line number="122" hits="41" branch="False" />
+                <line number="123" hits="47" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="63" hits="47" branch="False" />
+            <line number="64" hits="47" branch="True" condition-coverage="100% (6/6)">
+              <conditions>
+                <condition number="72" type="jump" coverage="100%" />
+                <condition number="104" type="jump" coverage="100%" />
+                <condition number="139" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="65" hits="47" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="217" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="66" hits="3" branch="False" />
+            <line number="68" hits="44" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="289" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="69" hits="44" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="348" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="70" hits="3" branch="False" />
+            <line number="71" hits="3" branch="False" />
+            <line number="74" hits="41" branch="False" />
+            <line number="75" hits="41" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="472" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="76" hits="41" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="545" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="77" hits="41" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="627" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="78" hits="41" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="700" type="jump" coverage="100%" />
+                <condition number="732" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="80" hits="41" branch="False" />
+            <line number="81" hits="41" branch="False" />
+            <line number="82" hits="41" branch="False" />
+            <line number="83" hits="41" branch="False" />
+            <line number="84" hits="41" branch="False" />
+            <line number="85" hits="41" branch="False" />
+            <line number="86" hits="41" branch="False" />
+            <line number="87" hits="41" branch="False" />
+            <line number="88" hits="41" branch="False" />
+            <line number="89" hits="41" branch="False" />
+            <line number="90" hits="41" branch="False" />
+            <line number="91" hits="41" branch="False" />
+            <line number="92" hits="41" branch="False" />
+            <line number="94" hits="41" branch="False" />
+            <line number="95" hits="41" branch="False" />
+            <line number="97" hits="41" branch="False" />
+            <line number="98" hits="41" branch="False" />
+            <line number="99" hits="41" branch="False" />
+            <line number="100" hits="41" branch="False" />
+            <line number="101" hits="41" branch="False" />
+            <line number="102" hits="41" branch="False" />
+            <line number="103" hits="41" branch="False" />
+            <line number="104" hits="41" branch="False" />
+            <line number="105" hits="41" branch="False" />
+            <line number="107" hits="41" branch="False" />
+            <line number="109" hits="41" branch="False" />
+            <line number="110" hits="41" branch="False" />
+            <line number="112" hits="41" branch="False" />
+            <line number="113" hits="41" branch="False" />
+            <line number="114" hits="41" branch="False" />
+            <line number="115" hits="41" branch="False" />
+            <line number="116" hits="41" branch="False" />
+            <line number="117" hits="41" branch="False" />
+            <line number="118" hits="41" branch="False" />
+            <line number="119" hits="41" branch="False" />
+            <line number="120" hits="41" branch="False" />
+            <line number="121" hits="41" branch="False" />
+            <line number="122" hits="41" branch="False" />
+            <line number="123" hits="47" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Controllers.TransactionsController/&lt;GetTransactions&gt;d__4" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Controllers/TransactionsController.cs" line-rate="1" branch-rate="1" complexity="10">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="10">
+              <lines>
+                <line number="33" hits="10" branch="False" />
+                <line number="34" hits="10" branch="True" condition-coverage="100% (6/6)">
+                  <conditions>
+                    <condition number="89" type="jump" coverage="100%" />
+                    <condition number="121" type="jump" coverage="100%" />
+                    <condition number="156" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="35" hits="10" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="239" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="36" hits="1" branch="False" />
+                <line number="38" hits="9" branch="False" />
+                <line number="40" hits="9" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="469" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="41" hits="2" branch="False" />
+                <line number="43" hits="9" branch="False" />
+                <line number="44" hits="9" branch="False" />
+                <line number="45" hits="9" branch="False" />
+                <line number="58" hits="10" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="33" hits="10" branch="False" />
+            <line number="34" hits="10" branch="True" condition-coverage="100% (6/6)">
+              <conditions>
+                <condition number="89" type="jump" coverage="100%" />
+                <condition number="121" type="jump" coverage="100%" />
+                <condition number="156" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="35" hits="10" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="239" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="36" hits="1" branch="False" />
+            <line number="38" hits="9" branch="False" />
+            <line number="40" hits="9" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="469" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="41" hits="2" branch="False" />
+            <line number="43" hits="9" branch="False" />
+            <line number="44" hits="9" branch="False" />
+            <line number="45" hits="9" branch="False" />
+            <line number="58" hits="10" branch="False" />
+          </lines>
+        </class>
+        <class name="TransactionService.Constants.SpendingTypeConstants" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/TransactionService/Constants/SpendingTypeConstants.cs" line-rate="1" branch-rate="1" complexity="7">
+          <methods>
+            <method name="IsValid" signature="(System.String)" line-rate="1" branch-rate="1" complexity="2">
+              <lines>
+                <line number="11" hits="153" branch="False" />
+                <line number="12" hits="153" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="27" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="13" hits="153" branch="False" />
+                <line number="14" hits="153" branch="False" />
+              </lines>
+            </method>
+            <method name="Normalize" signature="(System.String)" line-rate="1" branch-rate="1" complexity="4">
+              <lines>
+                <line number="17" hits="120" branch="False" />
+                <line number="18" hits="120" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="22" type="jump" coverage="100%" />
+                    <condition number="54" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="19" hits="119" branch="False" />
+              </lines>
+            </method>
+            <method name=".cctor" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="1" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="11" hits="153" branch="False" />
+            <line number="12" hits="153" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="27" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="13" hits="153" branch="False" />
+            <line number="14" hits="153" branch="False" />
+            <line number="17" hits="120" branch="False" />
+            <line number="18" hits="120" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="22" type="jump" coverage="100%" />
+                <condition number="54" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="19" hits="119" branch="False" />
+            <line number="8" hits="1" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+    <package name="UserService" line-rate="1" branch-rate="0.9687" complexity="82">
+      <classes>
+        <class name="UserService.Data.User" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Data/UserDbContext.cs" line-rate="1" branch-rate="1" complexity="8">
+          <methods>
+            <method name="get_Id" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="7" hits="268" branch="False" />
+              </lines>
+            </method>
+            <method name="get_Email" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="8" hits="281" branch="False" />
+              </lines>
+            </method>
+            <method name="get_PasswordHash" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="9" hits="162" branch="False" />
+              </lines>
+            </method>
+            <method name="get_FirstName" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="10" hits="225" branch="False" />
+              </lines>
+            </method>
+            <method name="get_LastName" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="11" hits="196" branch="False" />
+              </lines>
+            </method>
+            <method name="get_IsEmailVerified" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="12" hits="88" branch="False" />
+              </lines>
+            </method>
+            <method name="get_CreatedAt" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="13" hits="75" branch="False" />
+              </lines>
+            </method>
+            <method name="get_UpdatedAt" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="14" hits="83" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="7" hits="268" branch="False" />
+            <line number="8" hits="281" branch="False" />
+            <line number="9" hits="162" branch="False" />
+            <line number="10" hits="225" branch="False" />
+            <line number="11" hits="196" branch="False" />
+            <line number="12" hits="88" branch="False" />
+            <line number="13" hits="75" branch="False" />
+            <line number="14" hits="83" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Data.UserDbContext" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Data/UserDbContext.cs" line-rate="1" branch-rate="1" complexity="3">
+          <methods>
+            <method name="get_Users" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="21" hits="266" branch="False" />
+              </lines>
+            </method>
+            <method name="OnModelCreating" signature="(Microsoft.EntityFrameworkCore.ModelBuilder)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="24" hits="1" branch="False" />
+                <line number="25" hits="1" branch="False" />
+                <line number="26" hits="1" branch="False" />
+                <line number="27" hits="1" branch="False" />
+                <line number="28" hits="1" branch="False" />
+                <line number="29" hits="1" branch="False" />
+                <line number="30" hits="1" branch="False" />
+                <line number="31" hits="1" branch="False" />
+                <line number="32" hits="1" branch="False" />
+                <line number="33" hits="1" branch="False" />
+                <line number="34" hits="1" branch="False" />
+                <line number="35" hits="1" branch="False" />
+                <line number="36" hits="2" branch="False" />
+                <line number="37" hits="1" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(Microsoft.EntityFrameworkCore.DbContextOptions`1&lt;UserService.Data.UserDbContext&gt;)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="19" hits="291" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="21" hits="266" branch="False" />
+            <line number="24" hits="1" branch="False" />
+            <line number="25" hits="1" branch="False" />
+            <line number="26" hits="1" branch="False" />
+            <line number="27" hits="1" branch="False" />
+            <line number="28" hits="1" branch="False" />
+            <line number="29" hits="1" branch="False" />
+            <line number="30" hits="1" branch="False" />
+            <line number="31" hits="1" branch="False" />
+            <line number="32" hits="1" branch="False" />
+            <line number="33" hits="1" branch="False" />
+            <line number="34" hits="1" branch="False" />
+            <line number="35" hits="1" branch="False" />
+            <line number="36" hits="2" branch="False" />
+            <line number="37" hits="1" branch="False" />
+            <line number="19" hits="291" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.UsersController" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="0.9444" complexity="22">
+          <methods>
+            <method name="HashPasswordStatic" signature="(System.String)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="186" hits="16" branch="False" />
+              </lines>
+            </method>
+            <method name="HashPassword" signature="(System.String)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="192" hits="53" branch="False" />
+                <line number="196" hits="53" branch="False" />
+                <line number="197" hits="53" branch="False" />
+                <line number="198" hits="53" branch="False" />
+                <line number="199" hits="53" branch="False" />
+              </lines>
+            </method>
+            <method name="VerifyPassword" signature="(System.String,System.String)" line-rate="1" branch-rate="1" complexity="6">
+              <lines>
+                <line number="205" hits="11" branch="False" />
+                <line number="207" hits="11" branch="False" />
+                <line number="208" hits="11" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="45" type="jump" coverage="100%" />
+                    <condition number="87" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="209" hits="9" branch="False" />
+                <line number="210" hits="10" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="140" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="211" hits="8" branch="False" />
+                <line number="212" hits="8" branch="False" />
+                <line number="213" hits="8" branch="False" />
+                <line number="214" hits="8" branch="False" />
+                <line number="218" hits="2" branch="False" />
+                <line number="219" hits="2" branch="False" />
+                <line number="220" hits="2" branch="False" />
+                <line number="221" hits="2" branch="False" />
+                <line number="222" hits="11" branch="False" />
+              </lines>
+            </method>
+            <method name="GenerateJwt" signature="(UserService.Data.User)" line-rate="1" branch-rate="0.875" complexity="8">
+              <lines>
+                <line number="225" hits="42" branch="False" />
+                <line number="226" hits="42" branch="True" condition-coverage="50% (1/2)">
+                  <conditions>
+                    <condition number="38" type="jump" coverage="50%" />
+                  </conditions>
+                </line>
+                <line number="227" hits="42" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="94" type="jump" coverage="100%" />
+                    <condition number="124" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="228" hits="42" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="190" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="229" hits="42" branch="False" />
+                <line number="230" hits="42" branch="False" />
+                <line number="232" hits="42" branch="False" />
+                <line number="233" hits="42" branch="False" />
+                <line number="234" hits="42" branch="False" />
+                <line number="235" hits="42" branch="False" />
+                <line number="236" hits="42" branch="False" />
+                <line number="237" hits="42" branch="False" />
+                <line number="238" hits="42" branch="False" />
+                <line number="239" hits="42" branch="False" />
+                <line number="241" hits="42" branch="False" />
+                <line number="242" hits="42" branch="False" />
+                <line number="243" hits="42" branch="False" />
+                <line number="244" hits="42" branch="False" />
+                <line number="245" hits="42" branch="False" />
+                <line number="246" hits="42" branch="False" />
+                <line number="247" hits="42" branch="False" />
+                <line number="248" hits="42" branch="False" />
+                <line number="250" hits="42" branch="False" />
+                <line number="251" hits="42" branch="False" />
+              </lines>
+            </method>
+            <method name="SanitizeInput" signature="(System.String)" line-rate="1" branch-rate="1" complexity="4">
+              <lines>
+                <line number="257" hits="74" branch="False" />
+                <line number="258" hits="78" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="29" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="261" hits="70" branch="False" />
+                <line number="262" hits="70" branch="False" />
+                <line number="263" hits="70" branch="False" />
+                <line number="264" hits="70" branch="False" />
+                <line number="267" hits="70" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="190" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="268" hits="2" branch="False" />
+                <line number="270" hits="70" branch="False" />
+                <line number="271" hits="74" branch="False" />
+              </lines>
+            </method>
+            <method name=".ctor" signature="(UserService.Data.UserDbContext,Microsoft.Extensions.Logging.ILogger`1&lt;UserService.Controllers.UsersController&gt;,Microsoft.Extensions.Configuration.IConfiguration)" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="27" hits="83" branch="False" />
+                <line number="28" hits="83" branch="False" />
+                <line number="29" hits="83" branch="False" />
+                <line number="30" hits="83" branch="False" />
+                <line number="31" hits="83" branch="False" />
+                <line number="32" hits="83" branch="False" />
+              </lines>
+            </method>
+            <method name=".cctor" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="24" hits="1" branch="False" />
+                <line number="25" hits="1" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="186" hits="16" branch="False" />
+            <line number="192" hits="53" branch="False" />
+            <line number="196" hits="53" branch="False" />
+            <line number="197" hits="53" branch="False" />
+            <line number="198" hits="53" branch="False" />
+            <line number="199" hits="53" branch="False" />
+            <line number="205" hits="11" branch="False" />
+            <line number="207" hits="11" branch="False" />
+            <line number="208" hits="11" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="45" type="jump" coverage="100%" />
+                <condition number="87" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="209" hits="9" branch="False" />
+            <line number="210" hits="10" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="140" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="211" hits="8" branch="False" />
+            <line number="212" hits="8" branch="False" />
+            <line number="213" hits="8" branch="False" />
+            <line number="214" hits="8" branch="False" />
+            <line number="218" hits="2" branch="False" />
+            <line number="219" hits="2" branch="False" />
+            <line number="220" hits="2" branch="False" />
+            <line number="221" hits="2" branch="False" />
+            <line number="222" hits="11" branch="False" />
+            <line number="225" hits="42" branch="False" />
+            <line number="226" hits="42" branch="True" condition-coverage="50% (1/2)">
+              <conditions>
+                <condition number="38" type="jump" coverage="50%" />
+              </conditions>
+            </line>
+            <line number="227" hits="42" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="94" type="jump" coverage="100%" />
+                <condition number="124" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="228" hits="42" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="190" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="229" hits="42" branch="False" />
+            <line number="230" hits="42" branch="False" />
+            <line number="232" hits="42" branch="False" />
+            <line number="233" hits="42" branch="False" />
+            <line number="234" hits="42" branch="False" />
+            <line number="235" hits="42" branch="False" />
+            <line number="236" hits="42" branch="False" />
+            <line number="237" hits="42" branch="False" />
+            <line number="238" hits="42" branch="False" />
+            <line number="239" hits="42" branch="False" />
+            <line number="241" hits="42" branch="False" />
+            <line number="242" hits="42" branch="False" />
+            <line number="243" hits="42" branch="False" />
+            <line number="244" hits="42" branch="False" />
+            <line number="245" hits="42" branch="False" />
+            <line number="246" hits="42" branch="False" />
+            <line number="247" hits="42" branch="False" />
+            <line number="248" hits="42" branch="False" />
+            <line number="250" hits="42" branch="False" />
+            <line number="251" hits="42" branch="False" />
+            <line number="257" hits="74" branch="False" />
+            <line number="258" hits="78" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="29" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="261" hits="70" branch="False" />
+            <line number="262" hits="70" branch="False" />
+            <line number="263" hits="70" branch="False" />
+            <line number="264" hits="70" branch="False" />
+            <line number="267" hits="70" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="190" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="268" hits="2" branch="False" />
+            <line number="270" hits="70" branch="False" />
+            <line number="271" hits="74" branch="False" />
+            <line number="27" hits="83" branch="False" />
+            <line number="28" hits="83" branch="False" />
+            <line number="29" hits="83" branch="False" />
+            <line number="30" hits="83" branch="False" />
+            <line number="31" hits="83" branch="False" />
+            <line number="32" hits="83" branch="False" />
+            <line number="24" hits="1" branch="False" />
+            <line number="25" hits="1" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.UsersController/&lt;GetProfile&gt;d__9" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="1" complexity="14">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="14">
+              <lines>
+                <line number="138" hits="8" branch="False" />
+                <line number="139" hits="8" branch="True" condition-coverage="100% (10/10)">
+                  <conditions>
+                    <condition number="61" type="jump" coverage="100%" />
+                    <condition number="93" type="jump" coverage="100%" />
+                    <condition number="131" type="jump" coverage="100%" />
+                    <condition number="163" type="jump" coverage="100%" />
+                    <condition number="198" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="140" hits="8" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="286" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="141" hits="3" branch="False" />
+                <line number="142" hits="3" branch="False" />
+                <line number="143" hits="3" branch="False" />
+                <line number="146" hits="5" branch="False" />
+                <line number="147" hits="5" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="576" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="148" hits="1" branch="False" />
+                <line number="149" hits="1" branch="False" />
+                <line number="150" hits="1" branch="False" />
+                <line number="153" hits="4" branch="False" />
+                <line number="154" hits="4" branch="False" />
+                <line number="155" hits="4" branch="False" />
+                <line number="156" hits="4" branch="False" />
+                <line number="157" hits="4" branch="False" />
+                <line number="158" hits="4" branch="False" />
+                <line number="159" hits="4" branch="False" />
+                <line number="160" hits="8" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="138" hits="8" branch="False" />
+            <line number="139" hits="8" branch="True" condition-coverage="100% (10/10)">
+              <conditions>
+                <condition number="61" type="jump" coverage="100%" />
+                <condition number="93" type="jump" coverage="100%" />
+                <condition number="131" type="jump" coverage="100%" />
+                <condition number="163" type="jump" coverage="100%" />
+                <condition number="198" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="140" hits="8" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="286" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="141" hits="3" branch="False" />
+            <line number="142" hits="3" branch="False" />
+            <line number="143" hits="3" branch="False" />
+            <line number="146" hits="5" branch="False" />
+            <line number="147" hits="5" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="576" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="148" hits="1" branch="False" />
+            <line number="149" hits="1" branch="False" />
+            <line number="150" hits="1" branch="False" />
+            <line number="153" hits="4" branch="False" />
+            <line number="154" hits="4" branch="False" />
+            <line number="155" hits="4" branch="False" />
+            <line number="156" hits="4" branch="False" />
+            <line number="157" hits="4" branch="False" />
+            <line number="158" hits="4" branch="False" />
+            <line number="159" hits="4" branch="False" />
+            <line number="160" hits="8" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.UsersController/&lt;Login&gt;d__8" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="1" complexity="8">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="8">
+              <lines>
+                <line number="109" hits="12" branch="False" />
+                <line number="110" hits="12" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="65" type="jump" coverage="100%" />
+                    <condition number="108" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="111" hits="2" branch="False" />
+                <line number="112" hits="2" branch="False" />
+                <line number="113" hits="2" branch="False" />
+                <line number="116" hits="10" branch="False" />
+                <line number="117" hits="10" branch="False" />
+                <line number="119" hits="10" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="530" type="jump" coverage="100%" />
+                    <condition number="589" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="120" hits="5" branch="False" />
+                <line number="121" hits="5" branch="False" />
+                <line number="122" hits="5" branch="False" />
+                <line number="125" hits="5" branch="False" />
+                <line number="126" hits="5" branch="False" />
+                <line number="128" hits="5" branch="False" />
+                <line number="129" hits="5" branch="False" />
+                <line number="130" hits="5" branch="False" />
+                <line number="131" hits="5" branch="False" />
+                <line number="132" hits="5" branch="False" />
+                <line number="133" hits="12" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="109" hits="12" branch="False" />
+            <line number="110" hits="12" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="65" type="jump" coverage="100%" />
+                <condition number="108" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="111" hits="2" branch="False" />
+            <line number="112" hits="2" branch="False" />
+            <line number="113" hits="2" branch="False" />
+            <line number="116" hits="10" branch="False" />
+            <line number="117" hits="10" branch="False" />
+            <line number="119" hits="10" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="530" type="jump" coverage="100%" />
+                <condition number="589" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="120" hits="5" branch="False" />
+            <line number="121" hits="5" branch="False" />
+            <line number="122" hits="5" branch="False" />
+            <line number="125" hits="5" branch="False" />
+            <line number="126" hits="5" branch="False" />
+            <line number="128" hits="5" branch="False" />
+            <line number="129" hits="5" branch="False" />
+            <line number="130" hits="5" branch="False" />
+            <line number="131" hits="5" branch="False" />
+            <line number="132" hits="5" branch="False" />
+            <line number="133" hits="12" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.UsersController/&lt;Register&gt;d__7" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="0.95" complexity="20">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="0.95" complexity="20">
+              <lines>
+                <line number="38" hits="57" branch="False" />
+                <line number="39" hits="57" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="84" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="40" hits="1" branch="False" />
+                <line number="41" hits="1" branch="False" />
+                <line number="45" hits="56" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="185" type="jump" coverage="100%" />
+                    <condition number="228" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="46" hits="5" branch="False" />
+                <line number="47" hits="5" branch="False" />
+                <line number="48" hits="5" branch="False" />
+                <line number="52" hits="51" branch="False" />
+                <line number="53" hits="51" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="415" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="54" hits="7" branch="False" />
+                <line number="55" hits="7" branch="False" />
+                <line number="56" hits="7" branch="False" />
+                <line number="60" hits="44" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="570" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="61" hits="2" branch="False" />
+                <line number="62" hits="2" branch="False" />
+                <line number="66" hits="42" branch="True" condition-coverage="75% (3/4)">
+                  <conditions>
+                    <condition number="672" type="jump" coverage="50%" />
+                    <condition number="725" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="67" hits="42" branch="False" />
+                <line number="68" hits="3" branch="False" />
+                <line number="69" hits="3" branch="False" />
+                <line number="72" hits="39" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="1046" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="73" hits="2" branch="False" />
+                <line number="74" hits="2" branch="False" />
+                <line number="75" hits="2" branch="False" />
+                <line number="78" hits="37" branch="True" condition-coverage="100% (4/4)">
+                  <conditions>
+                    <condition number="1240" type="jump" coverage="100%" />
+                    <condition number="1292" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="79" hits="37" branch="False" />
+                <line number="80" hits="37" branch="False" />
+                <line number="81" hits="37" branch="False" />
+                <line number="82" hits="37" branch="False" />
+                <line number="83" hits="37" branch="False" />
+                <line number="84" hits="37" branch="False" />
+                <line number="85" hits="37" branch="False" />
+                <line number="86" hits="37" branch="False" />
+                <line number="87" hits="37" branch="False" />
+                <line number="88" hits="37" branch="False" />
+                <line number="90" hits="37" branch="False" />
+                <line number="91" hits="37" branch="False" />
+                <line number="93" hits="37" branch="False" />
+                <line number="95" hits="37" branch="False" />
+                <line number="96" hits="37" branch="False" />
+                <line number="97" hits="37" branch="False" />
+                <line number="98" hits="37" branch="False" />
+                <line number="99" hits="37" branch="False" />
+                <line number="100" hits="37" branch="False" />
+                <line number="101" hits="37" branch="False" />
+                <line number="102" hits="37" branch="False" />
+                <line number="103" hits="57" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="38" hits="57" branch="False" />
+            <line number="39" hits="57" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="84" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="40" hits="1" branch="False" />
+            <line number="41" hits="1" branch="False" />
+            <line number="45" hits="56" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="185" type="jump" coverage="100%" />
+                <condition number="228" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="46" hits="5" branch="False" />
+            <line number="47" hits="5" branch="False" />
+            <line number="48" hits="5" branch="False" />
+            <line number="52" hits="51" branch="False" />
+            <line number="53" hits="51" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="415" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="54" hits="7" branch="False" />
+            <line number="55" hits="7" branch="False" />
+            <line number="56" hits="7" branch="False" />
+            <line number="60" hits="44" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="570" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="61" hits="2" branch="False" />
+            <line number="62" hits="2" branch="False" />
+            <line number="66" hits="42" branch="True" condition-coverage="75% (3/4)">
+              <conditions>
+                <condition number="672" type="jump" coverage="50%" />
+                <condition number="725" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="67" hits="42" branch="False" />
+            <line number="68" hits="3" branch="False" />
+            <line number="69" hits="3" branch="False" />
+            <line number="72" hits="39" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="1046" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="73" hits="2" branch="False" />
+            <line number="74" hits="2" branch="False" />
+            <line number="75" hits="2" branch="False" />
+            <line number="78" hits="37" branch="True" condition-coverage="100% (4/4)">
+              <conditions>
+                <condition number="1240" type="jump" coverage="100%" />
+                <condition number="1292" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="79" hits="37" branch="False" />
+            <line number="80" hits="37" branch="False" />
+            <line number="81" hits="37" branch="False" />
+            <line number="82" hits="37" branch="False" />
+            <line number="83" hits="37" branch="False" />
+            <line number="84" hits="37" branch="False" />
+            <line number="85" hits="37" branch="False" />
+            <line number="86" hits="37" branch="False" />
+            <line number="87" hits="37" branch="False" />
+            <line number="88" hits="37" branch="False" />
+            <line number="90" hits="37" branch="False" />
+            <line number="91" hits="37" branch="False" />
+            <line number="93" hits="37" branch="False" />
+            <line number="95" hits="37" branch="False" />
+            <line number="96" hits="37" branch="False" />
+            <line number="97" hits="37" branch="False" />
+            <line number="98" hits="37" branch="False" />
+            <line number="99" hits="37" branch="False" />
+            <line number="100" hits="37" branch="False" />
+            <line number="101" hits="37" branch="False" />
+            <line number="102" hits="37" branch="False" />
+            <line number="103" hits="57" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.UsersController/&lt;VerifyEmail&gt;d__10" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="1" complexity="4">
+          <methods>
+            <method name="MoveNext" signature="()" line-rate="1" branch-rate="1" complexity="4">
+              <lines>
+                <line number="165" hits="6" branch="False" />
+                <line number="166" hits="6" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="72" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="167" hits="1" branch="False" />
+                <line number="168" hits="1" branch="False" />
+                <line number="171" hits="5" branch="False" />
+                <line number="172" hits="5" branch="True" condition-coverage="100% (2/2)">
+                  <conditions>
+                    <condition number="340" type="jump" coverage="100%" />
+                  </conditions>
+                </line>
+                <line number="173" hits="1" branch="False" />
+                <line number="174" hits="1" branch="False" />
+                <line number="175" hits="1" branch="False" />
+                <line number="178" hits="4" branch="False" />
+                <line number="179" hits="4" branch="False" />
+                <line number="180" hits="4" branch="False" />
+                <line number="182" hits="4" branch="False" />
+                <line number="183" hits="4" branch="False" />
+                <line number="184" hits="6" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="165" hits="6" branch="False" />
+            <line number="166" hits="6" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="72" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="167" hits="1" branch="False" />
+            <line number="168" hits="1" branch="False" />
+            <line number="171" hits="5" branch="False" />
+            <line number="172" hits="5" branch="True" condition-coverage="100% (2/2)">
+              <conditions>
+                <condition number="340" type="jump" coverage="100%" />
+              </conditions>
+            </line>
+            <line number="173" hits="1" branch="False" />
+            <line number="174" hits="1" branch="False" />
+            <line number="175" hits="1" branch="False" />
+            <line number="178" hits="4" branch="False" />
+            <line number="179" hits="4" branch="False" />
+            <line number="180" hits="4" branch="False" />
+            <line number="182" hits="4" branch="False" />
+            <line number="183" hits="4" branch="False" />
+            <line number="184" hits="6" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.RegisterRequest" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="get_Email" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="274" hits="435" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="274" hits="435" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.LoginRequest" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="get_Email" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="275" hits="62" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="275" hits="62" branch="False" />
+          </lines>
+        </class>
+        <class name="UserService.Controllers.VerifyEmailRequest" filename="https://raw.githubusercontent.com/anubhavsharmawork/fintech/a5540a6c4f2a9ba0851f10019987a02d3f1d042d/UserService/Controllers/UsersController.cs" line-rate="1" branch-rate="1" complexity="1">
+          <methods>
+            <method name="get_UserId" signature="()" line-rate="1" branch-rate="1" complexity="1">
+              <lines>
+                <line number="276" hits="24" branch="False" />
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="276" hits="24" branch="False" />
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>

@@ -12,3 +12,5 @@ obj/
 # Ignore logs and temporary files
 *.log
 *.tmp
+/ui/build
+/ui/coverage

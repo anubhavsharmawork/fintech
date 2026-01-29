@@ -55,7 +55,7 @@ public class AccountsController : ControllerBase
             AccountNumber = GenerateAccountNumber(),
             AccountType = request.AccountType,
             Balance = 0,
-            Currency = request.Currency ?? "USD",
+            Currency = string.IsNullOrWhiteSpace(request.Currency) ? "USD" : request.Currency,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

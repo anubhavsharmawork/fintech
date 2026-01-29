@@ -36,6 +36,11 @@ public class UsersController : ControllerBase
     [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
+        if (_configuration.GetValue<bool>("RegistrationDisabled", true))
+        {
+            return StatusCode(403, new { message = "Registration is currently disabled for security reasons." });
+        }
+
         // Input validation
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
         {

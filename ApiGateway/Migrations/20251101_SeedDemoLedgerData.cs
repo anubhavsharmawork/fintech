@@ -37,16 +37,16 @@ ON CONFLICT DO NOTHING;
 
  // Insert demo transactions idempotently
  migrationBuilder.Sql(@"
-INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""CreatedAt"")
-VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,100.00, 'NZD', 'credit', 'Salary deposit', NOW() - INTERVAL '1 day')
+INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""CreatedAt"", ""SpendingType"")
+VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,100.00, 'NZD', 'credit', 'Salary deposit', NOW() - INTERVAL '1 day', 'Future')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""CreatedAt"")
-VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,50.00, 'NZD', 'debit', 'Grocery shopping', NOW() - INTERVAL '2 days')
+INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""CreatedAt"", ""SpendingType"")
+VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,50.00, 'NZD', 'debit', 'Grocery shopping', NOW() - INTERVAL '2 days', 'Fixed')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""CreatedAt"")
-VALUES ('ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid, 'cccccccc-cccc-cccc-cccc-cccccccccccc'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,500.00, 'NZD', 'credit', 'Transfer from checking', NOW() - INTERVAL '3 days')
+INSERT INTO ""LedgerTransactions"" (""Id"", ""AccountId"", ""UserId"", ""Amount"", ""Currency"", ""Type"", ""Description"", ""CreatedAt"", ""SpendingType"")
+VALUES ('ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid, 'cccccccc-cccc-cccc-cccc-cccccccccccc'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid,500.00, 'NZD', 'credit', 'Transfer from checking', NOW() - INTERVAL '3 days', 'Future')
 ON CONFLICT DO NOTHING;
 ");
  }

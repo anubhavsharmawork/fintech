@@ -1,0 +1,392 @@
+/* WCAG 2.1 AA Compliance Styles */
+
+/* Skip Link - Visible on focus */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Focus Visible Styles - High Contrast */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* Ensure sufficient color contrast */
+.header {
+  background-color: #f8f9fa;
+  color: #212529;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.nav a,
+.nav button {
+  color: #0d6efd;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.nav a:hover,
+.nav a:focus,
+.nav button:hover,
+.nav button:focus {
+  background-color: #e7f1ff;
+  color: #0a58ca;
+}
+
+/* Form Labels */
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #212529;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px; /* Prevents zoom on iOS */
+  padding: 12px;
+  border: 2px solid #dee2e6;
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: #4f46e5;
+}
+
+/* Error Messages */
+.error-message {
+  color: #dc2626;
+  font-size: 14px;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Success Messages */
+.success-message {
+  color: #16a34a;
+  font-size: 14px;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Button Styles */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0a58ca;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #5c636a;
+}
+
+/* Ensure text is readable */
+body {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #212529;
+  background-color: #fff;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Ensure sufficient contrast for links */
+a {
+  color: #0d6efd;
+  text-decoration: underline;
+}
+
+a:visited {
+  color: #6f42c1;
+}
+
+a:hover,
+a:focus {
+  color: #0a58ca;
+}
+
+/* Heading hierarchy */
+h1 {
+  font-size: 2rem;
+  margin: 1rem 0;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.75rem;
+  margin: 0.875rem 0;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: 1.5rem;
+  margin: 0.75rem 0;
+  line-height: 1.2;
+}
+
+h4 {
+  font-size: 1.25rem;
+  margin: 0.625rem 0;
+  line-height: 1.2;
+}
+
+/* Table accessibility */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+th {
+  background-color: #f8f9fa;
+  color: #212529;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid #dee2e6;
+}
+
+td {
+  padding: 12px;
+  border: 1px solid #dee2e6;
+}
+
+tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Modal focus management */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 90%;
+}
+
+/* Breadcrumb navigation */
+nav[aria-label="Breadcrumb"] ol {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+nav[aria-label="Breadcrumb"] li::after {
+  content: "/";
+  margin-left: 8px;
+}
+
+nav[aria-label="Breadcrumb"] li:last-child::after {
+  content: "";
+}
+
+/* Loading indicators */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #0d6efd;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Tooltip accessibility */
+[role="tooltip"] {
+  background-color: #212529;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 1001;
+}
+
+/* Form field feedback */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
+.form-group .form-text {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  body {
+    color: #000;
+    background-color: #fff;
+  }
+
+  .btn-primary {
+    border: 2px solid #000;
+  }
+
+  .btn-secondary {
+    border: 2px solid #000;
+  }
+
+  a {
+    text-decoration: underline;
+    color: #0000ee;
+  }
+
+  a:visited {
+    color: #551a8b;
+  }
+}
+
+/* Balance Card Styles */
+.balance-card {
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 32px 28px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.balance-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 40px rgba(102, 126, 234, 0.4);
+}
+
+.balance-card:focus-within {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Ensure balance card is accessible */
+.balance-card h2 {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -1px;
+  color: #fff;
+}
+
+.balance-card [role="status"] {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #fff;
+}

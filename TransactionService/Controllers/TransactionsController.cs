@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using MassTransit;
+using TransactionService.Constants;
 using TransactionService.Data;
+using TransactionService.Models.Dtos;
 using Contracts.Events;
 
 namespace TransactionService.Controllers;
@@ -49,17 +51,31 @@ public class TransactionsController : ControllerBase
             currency = t.Currency,
             type = t.Type,
             description = t.Description,
+            spendingType = t.SpendingType,
+            txHash = t.TxHash,
             createdAt = t.CreatedAt
         }));
     }
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateTransaction([FromBody] CreateTransactionRequest request)
+    public async Task<IActionResult> CreateTransaction([FromBody] CreatePaymentRequestDto request)
     {
         var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
         if (!Guid.TryParse(userIdClaim, out var userId))
             return Unauthorized();
+
+        var spendingType = request.SpendingType ?? "Fun";
+        if (!SpendingTypeConstants.IsValid(spendingType))
+        {
+            return BadRequest(new { error = "Invalid spendingType. Allowed: Fun, Fixed, Future" });
+        }
+
+        var normalizedSpendingType = SpendingTypeConstants.Normalize(spendingType);
+        var txHash = string.IsNullOrWhiteSpace(request.TxHash) ? null : request.TxHash.Trim();
+        var currency = string.IsNullOrWhiteSpace(request.Currency) ? "USD" : request.Currency.Trim().ToUpperInvariant();
+        var type = string.IsNullOrWhiteSpace(request.Type) ? "debit" : request.Type.Trim();
+        var description = request.Description?.Trim() ?? string.Empty;
 
         var transaction = new Transaction
         {
@@ -67,16 +83,17 @@ public class TransactionsController : ControllerBase
             AccountId = request.AccountId,
             UserId = userId,
             Amount = request.Amount,
-            Currency = request.Currency ?? "USD",
-            Type = request.Type,
-            Description = request.Description,
+            Currency = currency,
+            Type = type,
+            Description = description,
+            SpendingType = normalizedSpendingType,
+            TxHash = txHash,
             CreatedAt = DateTime.UtcNow
         };
 
         _context.Transactions.Add(transaction);
         await _context.SaveChangesAsync();
 
-        // Publish event to RabbitMQ
         var transactionCreated = new TransactionCreated(
             transaction.Id,
             transaction.AccountId,
@@ -99,14 +116,9 @@ public class TransactionsController : ControllerBase
             currency = transaction.Currency,
             type = transaction.Type,
             description = transaction.Description,
+            spendingType = transaction.SpendingType,
+            txHash = transaction.TxHash,
             createdAt = transaction.CreatedAt
         });
     }
 }
-
-public record CreateTransactionRequest(
-    Guid AccountId, 
-    decimal Amount, 
-    string Type, 
-    string Description, 
-    string? Currency);

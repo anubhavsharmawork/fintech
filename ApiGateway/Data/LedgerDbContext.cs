@@ -24,6 +24,8 @@ public class LedgerTransaction
     public string Type { get; set; } = null!; // credit, debit
     public string Description { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
+    public string? SpendingType { get; set; }
+    public string? TxHash { get; set; }
 }
 
 public class LedgerPayee
@@ -61,11 +63,8 @@ public class LedgerDbContext : DbContext
             e.ToTable("LedgerTransactions");
             e.HasKey(x => x.Id);
             e.Property(x => x.Amount).HasPrecision(18, 2);
-            e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
-            e.Property(x => x.Type).HasMaxLength(10).IsRequired();
-            e.Property(x => x.Description).HasMaxLength(500).IsRequired();
-            e.HasIndex(x => x.AccountId);
-            e.HasIndex(x => x.UserId);
+            e.Property(x => x.SpendingType).HasMaxLength(20);
+            e.Property(x => x.TxHash).HasMaxLength(100);
         });
 
         modelBuilder.Entity<LedgerPayee>(e =>
