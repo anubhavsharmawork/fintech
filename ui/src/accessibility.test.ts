@@ -460,5 +460,135 @@ describe('accessibility.ts', () => {
       h3.remove();
       consoleSpy.mockRestore();
     });
+
+    it('should call setupSkipLink on initialization', () => {
+      const skipLink = document.createElement('a');
+      skipLink.className = 'skip-link';
+      skipLink.href = '#main-content';
+      document.body.appendChild(skipLink);
+
+      const mainContent = document.createElement('div');
+      mainContent.id = 'main-content';
+      mainContent.tabIndex = -1;
+      document.body.appendChild(mainContent);
+
+      const focusSpy = jest.spyOn(mainContent, 'focus');
+
+      initializeAccessibility();
+      skipLink.click();
+
+      expect(focusSpy).toHaveBeenCalled();
+
+      skipLink.remove();
+      mainContent.remove();
+    });
+
+    it('should wire up all [role=button] elements found in document', () => {
+      const btn1 = document.createElement('div');
+      btn1.setAttribute('role', 'button');
+      const btn2 = document.createElement('div');
+      btn2.setAttribute('role', 'button');
+      document.body.appendChild(btn1);
+      document.body.appendChild(btn2);
+
+      const clickSpy1 = jest.spyOn(btn1, 'click');
+      const clickSpy2 = jest.spyOn(btn2, 'click');
+
+      initializeAccessibility();
+
+      btn1.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      btn2.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+
+      expect(clickSpy1).toHaveBeenCalled();
+      expect(clickSpy2).toHaveBeenCalled();
+
+      btn1.remove();
+      btn2.remove();
+    });
+  });
+
+  describe('getContrastRatio edge cases', () => {
+    it('should return 0 for color string with no numeric values', () => {
+      const ratio = getContrastRatio('invalid-color', 'rgb(255, 255, 255)');
+      expect(ratio).toBe(0);
+    });
+
+    it('should handle colors near the sRGB linearisation threshold', () => {
+      // Values <= 0.03928 use v/12.92, values above use power curve
+      // rgb(10,10,10) -> 10/255 ≈ 0.0392 which is just above threshold
+      const ratio = getContrastRatio('rgb(10, 10, 10)', 'rgb(255, 255, 255)');
+      expect(ratio).toBeGreaterThan(1);
+    });
+
+    it('should return symmetric ratio regardless of argument order', () => {
+      const c1 = 'rgb(50, 100, 150)';
+      const c2 = 'rgb(200, 220, 240)';
+      expect(getContrastRatio(c1, c2)).toBeCloseTo(getContrastRatio(c2, c1), 5);
+    });
+  });
+
+  describe('validateAriaAttributes additional cases', () => {
+    it('should not warn for custom button with tabindex set', () => {
+      const div = document.createElement('div');
+      div.setAttribute('role', 'button');
+      div.setAttribute('tabindex', '0');
+      const warnings = validateAriaAttributes(div);
+      expect(warnings.some((w) => w.includes('tabindex'))).toBe(false);
+    });
+
+    it('should detect missing alt on img without role=presentation', () => {
+      const img = document.createElement('img');
+      const warnings = validateAriaAttributes(img);
+      expect(warnings.some((w) => w.includes('alt'))).toBe(true);
+    });
+
+    it('should warn for textarea not in a label', () => {
+      const textarea = document.createElement('textarea');
+      const warnings = validateAriaAttributes(textarea);
+      expect(warnings.some((w) => w.includes('label'))).toBe(true);
+    });
+
+    it('should not warn for textarea inside a label', () => {
+      const label = document.createElement('label');
+      const textarea = document.createElement('textarea');
+      label.appendChild(textarea);
+      const warnings = validateAriaAttributes(textarea);
+      expect(warnings.some((w) => w.includes('label'))).toBe(false);
+    });
+
+    it('should warn for select not in a label', () => {
+      const select = document.createElement('select');
+      const warnings = validateAriaAttributes(select);
+      expect(warnings.some((w) => w.includes('label'))).toBe(true);
+    });
+
+    it('should return empty array for a div with no special attributes', () => {
+      const div = document.createElement('div');
+      const warnings = validateAriaAttributes(div);
+      expect(warnings).toEqual([]);
+    });
+  });
+
+  describe('enableKeyboardNavigation additional cases', () => {
+    it('should ignore elements without role=button', () => {
+      const div = document.createElement('div');
+      div.setAttribute('role', 'region');
+      const clickSpy = jest.spyOn(div, 'click');
+
+      enableKeyboardNavigation(div);
+      div.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      expect(clickSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not fire for elements with no role attribute', () => {
+      const div = document.createElement('div');
+      const clickSpy = jest.spyOn(div, 'click');
+
+      enableKeyboardNavigation(div);
+      div.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      expect(clickSpy).not.toHaveBeenCalled();
+    });
   });
 });

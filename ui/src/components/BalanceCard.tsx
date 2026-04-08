@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 interface BalanceCardProps {
   total: number;
@@ -6,6 +7,9 @@ interface BalanceCardProps {
   status?: 'healthy' | 'warning' | 'low' | 'excellent';
   showTrend?: boolean;
   trendPercent?: number;
+  availableBalance?: number;
+  heldBalance?: number;
+  sparklineData?: number[];
 }
 
 const BalanceCard: React.FC<BalanceCardProps> = ({
@@ -14,6 +18,9 @@ const BalanceCard: React.FC<BalanceCardProps> = ({
   status = 'healthy',
   showTrend = false,
   trendPercent = 0,
+  availableBalance,
+  heldBalance,
+  sparklineData,
 }) => {
   const formatter = new Intl.NumberFormat('en-NZ', {
     style: 'currency',
@@ -24,15 +31,15 @@ const BalanceCard: React.FC<BalanceCardProps> = ({
   const getStatusColor = (s: string) => {
     switch (s) {
       case 'excellent':
-        return '#059669';
+        return '#34d399';
       case 'healthy':
-        return '#0891b2';
+        return '#22d3ee';
       case 'warning':
-        return '#f59e0b';
+        return '#fbbf24';
       case 'low':
-        return '#dc2626';
+        return '#f87171';
       default:
-        return '#6b7280';
+        return '#94a3b8';
     }
   };
 
@@ -51,103 +58,163 @@ const BalanceCard: React.FC<BalanceCardProps> = ({
     }
   };
 
+  const trendIsUp = trendPercent > 0;
+  const sparkChartData = sparklineData?.map(v => ({ v }));
+  const sparkIsUp = sparklineData && sparklineData.length > 1
+    ? sparklineData[sparklineData.length - 1] >= sparklineData[0]
+    : true;
+
   return (
     <div
-      className="balance-card"
+      className="balance-card card"
       role="region"
       aria-label="Total Balance Overview"
-      style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: '#fff',
-        padding: '32px 28px',
-        borderRadius: '12px',
-        marginBottom: '24px',
-        boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+      style={{ padding: '16px 20px' }}
     >
-      {/* Decorative background circle */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-50px',
-          right: '-50px',
-          width: '150px',
-          height: '150px',
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '50%',
-        }}
-        aria-hidden="true"
-      />
-
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Label */}
+      {/* Header: label + trend chip */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+      }}>
         <div
           style={{
-            fontSize: '14px',
+            fontSize: 'var(--font-size-xs)',
             fontWeight: 600,
             letterSpacing: '0.5px',
             textTransform: 'uppercase',
-            opacity: 0.9,
-            marginBottom: '8px',
+            color: '#94a3b8',
           }}
         >
           Total Balance
         </div>
+        {showTrend && trendPercent !== 0 && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 2,
+              height: 20,
+              padding: '0 6px',
+              fontSize: 'var(--font-size-xs)',
+              fontWeight: 600,
+              borderRadius: 4,
+              backgroundColor: trendIsUp ? 'rgba(52, 211, 153, 0.15)' : 'rgba(248, 113, 113, 0.15)',
+              color: trendIsUp ? '#6ee7b7' : '#fca5a5',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {trendIsUp ? '▲' : '▼'}
+            {trendIsUp ? '+' : ''}
+            {trendPercent}% this month
+          </span>
+        )}
+      </div>
 
-        {/* Main Balance Amount */}
+      {/* Balance + sparkline row */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+      }}>
         <div
-          style={{
-            fontSize: '48px',
-            fontWeight: 700,
-            lineHeight: 1,
-            marginBottom: '16px',
-            letterSpacing: '-1px',
-          }}
           role="heading"
           aria-level={2}
           aria-label={`Total balance ${formatter.format(total)}`}
+          style={{
+            fontSize: 'var(--font-size-2xl)',
+            fontWeight: 700,
+            lineHeight: 1.1,
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: '-0.5px',
+            color: '#ffffff',
+          }}
         >
           {formatter.format(total)}
         </div>
-
-        {/* Trend */}
-        {showTrend && trendPercent !== 0 && (
-          <div
-            style={{
-              fontSize: '14px',
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <span>{trendPercent > 0 ? '📈' : '📉'}</span>
-            <span>
-              {trendPercent > 0 ? '+' : ''}
-              {trendPercent}% this month
-            </span>
+        {sparkChartData && sparkChartData.length > 1 && (
+          <div style={{ width: 80, height: 60, flexShrink: 0 }} aria-hidden="true">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sparkChartData}>
+                <Line
+                  type="monotone"
+                  dataKey="v"
+                  stroke={sparkIsUp ? '#059669' : '#dc2626'}
+                  strokeWidth={1.5}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         )}
+      </div>
 
-        {/* Status Badge */}
-        <div
+      {/* Available / Held row */}
+      {(availableBalance !== undefined || heldBalance !== undefined) && (
+        <div style={{
+          display: 'flex',
+          gap: 24,
+          marginTop: 12,
+          paddingTop: 12,
+          borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+          fontSize: 'var(--font-size-xs)',
+          color: '#94a3b8',
+        }}>
+          {availableBalance !== undefined && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <span>Available</span>
+              <span style={{
+                fontWeight: 600,
+                color: '#ffffff',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {formatter.format(availableBalance)}
+              </span>
+            </div>
+          )}
+          {heldBalance !== undefined && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <span>Held</span>
+              <span style={{
+                fontWeight: 600,
+                color: '#ffffff',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {formatter.format(heldBalance)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Status indicator */}
+      <span
+        role="status"
+        aria-label={getStatusLabel(status)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          marginTop: 12,
+          fontSize: 'var(--font-size-xs)',
+          fontWeight: 500,
+          width: 'fit-content',
+        }}
+      >
+        <span
+          aria-hidden="true"
           style={{
             display: 'inline-block',
-            background: getStatusColor(status),
-            padding: '8px 16px',
-            borderRadius: '24px',
-            fontSize: '13px',
-            fontWeight: 600,
-            letterSpacing: '0.3px',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            backgroundColor: getStatusColor(status),
           }}
-          role="status"
-          aria-label={getStatusLabel(status)}
-        >
-          {getStatusLabel(status)}
-        </div>
-      </div>
+        />
+        {getStatusLabel(status)}
+      </span>
     </div>
   );
 };

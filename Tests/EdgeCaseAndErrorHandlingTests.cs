@@ -2,16 +2,24 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.InMemory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using UserService.Controllers;
 using UserService.Data;
+using UserService.Services;
 using AccountService.Controllers;
 using AccountService.Data;
+using AccountService.Policy;
+using AccountService.Services;
+using Tests.Mocks;
 using TransactionService.Controllers;
 using TransactionService.Data;
 using TransactionService.Models.Dtos;
+using TransactionService.Services;
+using MassTransit;
 
 namespace Tests;
 
@@ -41,7 +49,7 @@ public class EdgeCaseAndErrorHandlingTests
                 })
                 .Build();
 
-            var controller = new UsersController(db, logger.Object, config)
+            var controller = new UsersController(db, logger.Object, config, new PasswordHasherService())
             {
                 ControllerContext = new ControllerContext
                 {
@@ -178,9 +186,11 @@ public class EdgeCaseAndErrorHandlingTests
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             var db = new AccountDbContext(options);
-            var logger = new Mock<ILogger<AccountsController>>();
+            var logger = new Mock<ILogger<AccountService.Services.AccountService>>();
+            var cacheService = new Mock<AccountService.Services.ICacheService>();
+            var service = new AccountService.Services.AccountService(db, logger.Object, cacheService.Object, new AllowAllLimitPolicy());
 
-            var controller = new AccountsController(db, logger.Object)
+            var controller = new AccountsController(service)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -198,7 +208,7 @@ public class EdgeCaseAndErrorHandlingTests
         }
 
         [Theory]
-        [InlineData("USD")]
+        [InlineData("NZD")]
         [InlineData("EUR")]
         [InlineData("GBP")]
         [InlineData("JPY")]
@@ -237,7 +247,7 @@ public class EdgeCaseAndErrorHandlingTests
             // Assert
             var okResult = (OkObjectResult)result;
             var prop = okResult.Value?.GetType().GetProperty("currency");
-            prop?.GetValue(okResult.Value)?.ToString().Should().Be("USD");
+            prop?.GetValue(okResult.Value)?.ToString().Should().Be("NZD");
         }
 
         [Fact]
@@ -251,7 +261,7 @@ public class EdgeCaseAndErrorHandlingTests
             // Act
             for (int i = 0; i < 10; i++)
             {
-                await controller.CreateAccount(new CreateAccountRequest("Checking", "USD"));
+                await controller.CreateAccount(new CreateAccountRequest("Checking", "NZD"));
             }
 
             // Assert
@@ -272,12 +282,22 @@ public class EdgeCaseAndErrorHandlingTests
         {
             var options = new DbContextOptionsBuilder<TransactionDbContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
             var db = new TransactionDbContext(options);
-            var logger = new Mock<ILogger<TransactionsController>>();
+            var logger = new Mock<ILogger<TransactionService.Services.TransactionService>>();
             var publisher = new Mock<MassTransit.IPublishEndpoint>();
+            var amlChannel = new Mock<TransactionService.Services.IAmlScreeningChannel>();
+            var cacheService = new Mock<TransactionService.Services.ICacheService>();
+            amlChannel.Setup(a => a.TryEnqueue(It.IsAny<TransactionService.Data.Transaction>())).Returns(true);
+            var service = new TransactionService.Services.TransactionService(
+                db,
+                publisher.Object,
+                amlChannel.Object,
+                cacheService.Object,
+                logger.Object);
 
-            var controller = new TransactionsController(db, publisher.Object, logger.Object)
+            var controller = new TransactionsController(service)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -304,7 +324,7 @@ public class EdgeCaseAndErrorHandlingTests
             {
                 AccountId = Guid.NewGuid(),
                 Amount = 0m,
-                Currency = "USD",
+                Currency = "NZD",
                 SpendingType = "Fun"
             };
 
@@ -327,7 +347,7 @@ public class EdgeCaseAndErrorHandlingTests
             {
                 AccountId = Guid.NewGuid(),
                 Amount = -100m,
-                Currency = "USD",
+                Currency = "NZD",
                 SpendingType = "Fun"
             };
 
@@ -350,7 +370,7 @@ public class EdgeCaseAndErrorHandlingTests
             {
                 AccountId = Guid.NewGuid(),
                 Amount = decimal.MaxValue / 2,
-                Currency = "USD",
+                Currency = "NZD",
                 SpendingType = "Fun"
             };
 
@@ -373,7 +393,7 @@ public class EdgeCaseAndErrorHandlingTests
             {
                 AccountId = Guid.NewGuid(),
                 Amount = 100m,
-                Currency = "USD",
+                Currency = "NZD",
                 Description = "",
                 SpendingType = "Fun"
             };
@@ -398,7 +418,7 @@ public class EdgeCaseAndErrorHandlingTests
             {
                 AccountId = Guid.NewGuid(),
                 Amount = 100m,
-                Currency = "USD",
+                Currency = "NZD",
                 Description = longDescription,
                 SpendingType = "Fun"
             };
@@ -422,8 +442,8 @@ public class EdgeCaseAndErrorHandlingTests
             var anotherAccountId = Guid.NewGuid();
 
             db.Transactions.AddRange(
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
-                new Transaction { Id = Guid.NewGuid(), AccountId = anotherAccountId, UserId = userId, Amount = 200, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
+                new Transaction { Id = Guid.NewGuid(), AccountId = anotherAccountId, UserId = userId, Amount = 200, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
             );
             await db.SaveChangesAsync();
 
@@ -434,7 +454,7 @@ public class EdgeCaseAndErrorHandlingTests
 
             // Assert
             var okResult = (OkObjectResult)result;
-            var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<dynamic>().ToList();
+            var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
             transactions.Should().HaveCount(1);
         }
 
@@ -453,7 +473,7 @@ public class EdgeCaseAndErrorHandlingTests
             {
                 AccountId = Guid.NewGuid(),
                 Amount = amount,
-                Currency = "USD",
+                Currency = "NZD",
                 SpendingType = "Fun"
             };
 
@@ -482,14 +502,16 @@ public class EdgeCaseAndErrorHandlingTests
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             var db = new AccountDbContext(options);
-            var logger = new Mock<ILogger<AccountsController>>();
+            var logger = new Mock<ILogger<AccountService.Services.AccountService>>();
+            var cacheService = new Mock<AccountService.Services.ICacheService>();
 
             var tasks = new List<Task>();
 
             // Act - Create accounts for 5 different users concurrently
             for (int i = 0; i < 5; i++)
             {
-                var controller = new AccountsController(db, logger.Object)
+                var service = new AccountService.Services.AccountService(db, logger.Object, cacheService.Object, new AllowAllLimitPolicy());
+                var controller = new AccountsController(service)
                 {
                     ControllerContext = new ControllerContext
                     {
@@ -501,7 +523,7 @@ public class EdgeCaseAndErrorHandlingTests
                 var identity = new ClaimsIdentity(new[] { new Claim("sub", userId.ToString()) }, "Test");
                 controller.ControllerContext.HttpContext!.User = new ClaimsPrincipal(identity);
 
-                tasks.Add(controller.CreateAccount(new CreateAccountRequest("Checking", "USD")));
+                tasks.Add(controller.CreateAccount(new CreateAccountRequest("Checking", "NZD")));
             }
 
             await Task.WhenAll(tasks);
@@ -526,7 +548,7 @@ public class EdgeCaseAndErrorHandlingTests
             var password = "Passwrd#";
 
             // Act
-            var hash = UsersController.HashPasswordStatic(password);
+            var hash = new PasswordHasherService().Hash(password);
 
             // Assert
             hash.Should().StartWith("v1$");

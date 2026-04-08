@@ -194,7 +194,7 @@ public class DatabaseOperationTests
                 AccountNumber = "1234567890",
                 AccountType = "Checking",
                 Balance = 1000m,
-                Currency = "USD",
+                Currency = "NZD",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -208,7 +208,7 @@ public class DatabaseOperationTests
             retrieved.Should().NotBeNull();
             retrieved!.AccountNumber.Should().Be("1234567890");
             retrieved.Balance.Should().Be(1000m);
-            retrieved.Currency.Should().Be("USD");
+            retrieved.Currency.Should().Be("NZD");
         }
 
         [Fact]
@@ -223,7 +223,7 @@ public class DatabaseOperationTests
                 AccountNumber = "1234567890",
                 AccountType = "Checking",
                 Balance = 1000m,
-                Currency = "USD",
+                Currency = "NZD",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -250,9 +250,9 @@ public class DatabaseOperationTests
             var otherUserId = Guid.NewGuid();
 
             db.Accounts.AddRange(
-                new Account { Id = Guid.NewGuid(), UserId = userId, AccountNumber = "1111", AccountType = "Checking", Balance = 100, Currency = "USD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                new Account { Id = Guid.NewGuid(), UserId = userId, AccountNumber = "2222", AccountType = "Savings", Balance = 200, Currency = "USD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                new Account { Id = Guid.NewGuid(), UserId = otherUserId, AccountNumber = "9999", AccountType = "Checking", Balance = 9999, Currency = "USD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+                new Account { Id = Guid.NewGuid(), UserId = userId, AccountNumber = "1111", AccountType = "Checking", Balance = 100, Currency = "NZD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Account { Id = Guid.NewGuid(), UserId = userId, AccountNumber = "2222", AccountType = "Savings", Balance = 200, Currency = "NZD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Account { Id = Guid.NewGuid(), UserId = otherUserId, AccountNumber = "9999", AccountType = "Checking", Balance = 9999, Currency = "NZD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
             );
             await db.SaveChangesAsync();
 
@@ -276,7 +276,7 @@ public class DatabaseOperationTests
                 AccountNumber = "1234567890",
                 AccountType = "Checking",
                 Balance = 1000m,
-                Currency = "USD",
+                Currency = "NZD",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -302,8 +302,8 @@ public class DatabaseOperationTests
             var accountNumber = "1234567890";
 
             db.Accounts.AddRange(
-                new Account { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), AccountNumber = accountNumber, AccountType = "Checking", Balance = 100, Currency = "USD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                new Account { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), AccountNumber = "0987654321", AccountType = "Savings", Balance = 200, Currency = "USD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+                new Account { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), AccountNumber = accountNumber, AccountType = "Checking", Balance = 100, Currency = "NZD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Account { Id = Guid.NewGuid(), UserId = Guid.NewGuid(), AccountNumber = "0987654321", AccountType = "Savings", Balance = 200, Currency = "NZD", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
             );
             await db.SaveChangesAsync();
 
@@ -343,7 +343,7 @@ public class DatabaseOperationTests
                 AccountId = accountId,
                 UserId = userId,
                 Amount = 100m,
-                Currency = "USD",
+                Currency = "NZD",
                 Type = "debit",
                 Description = "Test transaction",
                 SpendingType = "Fun",
@@ -373,9 +373,9 @@ public class DatabaseOperationTests
             var accountId = Guid.NewGuid();
 
             db.Transactions.AddRange(
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fixed", CreatedAt = DateTime.UtcNow },
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = otherUserId, Amount = 9999, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fixed", CreatedAt = DateTime.UtcNow },
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = otherUserId, Amount = 9999, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
             );
             await db.SaveChangesAsync();
 
@@ -397,8 +397,8 @@ public class DatabaseOperationTests
             var accountId2 = Guid.NewGuid();
 
             db.Transactions.AddRange(
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId1, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId2, UserId = userId, Amount = 200, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId1, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId2, UserId = userId, Amount = 200, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
             );
             await db.SaveChangesAsync();
 
@@ -422,9 +422,9 @@ public class DatabaseOperationTests
             var now = DateTime.UtcNow;
 
             db.Transactions.AddRange(
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-2) },
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now },
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 150, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-1) }
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-2) },
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now },
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 150, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-1) }
             );
             await db.SaveChangesAsync();
 
@@ -452,9 +452,9 @@ public class DatabaseOperationTests
             var to = now.AddDays(-2);
 
             db.Transactions.AddRange(
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddDays(-10) },
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddDays(-3) },
-                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 150, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now }
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddDays(-10) },
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddDays(-3) },
+                new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 150, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now }
             );
             await db.SaveChangesAsync();
 
@@ -482,7 +482,7 @@ public class DatabaseOperationTests
                 AccountId = accountId, 
                 UserId = userId, 
                 Amount = 100, 
-                Currency = "USD", 
+                Currency = "NZD", 
                 Type = "debit", 
                 Description = "Test transaction",
                 SpendingType = "Fun", 

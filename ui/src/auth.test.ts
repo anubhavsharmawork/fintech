@@ -102,25 +102,28 @@ describe('auth.ts', () => {
   });
 
   describe('clearAuth', () => {
-    it('should remove token from localStorage', () => {
+    it('should remove token from localStorage', async () => {
       (localStorage.removeItem as jest.Mock).mockImplementation(() => {});
-      
-      clearAuth();
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true });
+
+      await clearAuth();
 
       expect(localStorage.removeItem).toHaveBeenCalledWith('token');
     });
 
-    it('should remove userId from localStorage', () => {
+    it('should remove userId from localStorage', async () => {
       (localStorage.removeItem as jest.Mock).mockImplementation(() => {});
-      
-      clearAuth();
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true });
+
+      await clearAuth();
 
       expect(localStorage.removeItem).toHaveBeenCalledWith('userId');
     });
 
     it('should emit auth change event with null', (done) => {
       (localStorage.removeItem as jest.Mock).mockImplementation(() => {});
-      
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true });
+
       onAuthChange((token) => {
         expect(token).toBeNull();
         done();
@@ -129,12 +132,13 @@ describe('auth.ts', () => {
       clearAuth();
     });
 
-    it('should handle localStorage errors gracefully', () => {
+    it('should handle localStorage errors gracefully', async () => {
       (localStorage.removeItem as jest.Mock).mockImplementation(() => {
         throw new Error('Storage error');
       });
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true });
 
-      expect(() => clearAuth()).not.toThrow();
+      await expect(clearAuth()).resolves.not.toThrow();
     });
   });
 
@@ -252,9 +256,9 @@ describe('auth.ts', () => {
 
   describe('getToken', () => {
     it('should return cached token if not expired', async () => {
-      const futureExp = Math.floor(Date.now() / 1000) + 3600;
-      const token = 'header.eyJleHAiOjE2OTk5OTk5OTl9.signature';
-      
+      // Token with exp: 9999999999 (far future - year 2286)
+      const token = 'header.eyJleHAiOjk5OTk5OTk5OTl9.signature';
+
       (localStorage.getItem as jest.Mock).mockReturnValueOnce(token);
 
       const result = await getToken();
@@ -321,9 +325,11 @@ describe('auth.ts', () => {
   });
 
   describe('authFetch', () => {
+    // Valid JWT with far-future expiry (exp: 9999999999) to avoid refresh
+    const validToken = 'header.eyJleHAiOjk5OTk5OTk5OTl9.sig';
+
     it('should add Authorization header with valid token', async () => {
-      const token = 'header.eyJleHAiOjk5OTk5OTk5OTl9.sig';
-      (localStorage.getItem as jest.Mock).mockReturnValueOnce(token);
+      (localStorage.getItem as jest.Mock).mockReturnValueOnce(validToken);
       (global.fetch as jest.Mock).mockResolvedValueOnce({ status: 200 });
 
       await authFetch('/api/test');
@@ -338,39 +344,50 @@ describe('auth.ts', () => {
     });
 
     it('should not add Authorization header if no token', async () => {
-      (localStorage.getItem as jest.Mock).mockReturnValueOnce(null);
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ status: 200 });
+      (localStorage.getItem as jest.Mock).mockReturnValue(null);
+      // First call is refresh attempt (returns not ok), second is actual request
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({ ok: false })
+        .mockResolvedValueOnce({ status: 200 });
 
       await authFetch('/api/test');
 
+      // The second call (actual request) should have no Authorization header
       const calls = (global.fetch as jest.Mock).mock.calls;
-      const headers = calls[0][1].headers;
+      const actualRequestCall = calls[1];
+      const headers = actualRequestCall[1].headers;
       expect(headers.get('Authorization')).toBeNull();
     });
 
     it('should retry with refreshed token on 401', async () => {
-      (localStorage.getItem as jest.Mock).mockReturnValueOnce('expired-token');
+      (localStorage.getItem as jest.Mock).mockReturnValueOnce(validToken);
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({ status: 401 })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ token: validToken }) })
         .mockResolvedValueOnce({ status: 200 });
       (localStorage.setItem as jest.Mock).mockImplementation(() => {});
 
       await authFetch('/api/test');
 
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      // 1st: original request (401), 2nd: refresh, 3rd: retry
+      expect(global.fetch).toHaveBeenCalledTimes(3);
     });
 
-    it('should not retry if already retried', async () => {
-      (localStorage.getItem as jest.Mock).mockReturnValueOnce('token');
-      (global.fetch as jest.Mock).mockResolvedValueOnce({ status: 401 });
+    it('should not retry if refresh fails on 401', async () => {
+      (localStorage.getItem as jest.Mock).mockReturnValueOnce(validToken);
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({ status: 401 })
+        .mockResolvedValueOnce({ ok: false }); // refresh fails
 
-      await authFetch('/api/test', {}, false);
+      const response = await authFetch('/api/test');
 
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      // 1st: original request (401), 2nd: refresh attempt (fails), no retry
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(response.status).toBe(401);
     });
 
     it('should preserve request headers', async () => {
-      (localStorage.getItem as jest.Mock).mockReturnValueOnce('token');
+      (localStorage.getItem as jest.Mock).mockReturnValueOnce(validToken);
       (global.fetch as jest.Mock).mockResolvedValueOnce({ status: 200 });
 
       await authFetch('/api/test', { headers: { 'X-Custom': 'value' } });
@@ -381,7 +398,7 @@ describe('auth.ts', () => {
     });
 
     it('should handle fetch errors', async () => {
-      (localStorage.getItem as jest.Mock).mockReturnValueOnce('token');
+      (localStorage.getItem as jest.Mock).mockReturnValueOnce(validToken);
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       await expect(authFetch('/api/test')).rejects.toThrow('Network error');

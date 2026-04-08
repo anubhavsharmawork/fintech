@@ -100,27 +100,27 @@ describe('BalanceCard Component', () => {
 
   describe('Status Colors', () => {
     it('should apply green color for excellent status', () => {
-      render(<BalanceCard total={1000} status="excellent" />);
-      const statusBadge = screen.getByRole('status');
-      expect(statusBadge).toHaveStyle({ background: '#059669' });
+      const { container } = render(<BalanceCard total={1000} status="excellent" />);
+      const dot = container.querySelector('[aria-hidden="true"]');
+      expect(dot).toHaveStyle({ backgroundColor: '#34d399' });
     });
 
     it('should apply cyan color for healthy status', () => {
-      render(<BalanceCard total={1000} status="healthy" />);
-      const statusBadge = screen.getByRole('status');
-      expect(statusBadge).toHaveStyle({ background: '#0891b2' });
+      const { container } = render(<BalanceCard total={1000} status="healthy" />);
+      const dot = container.querySelector('[aria-hidden="true"]');
+      expect(dot).toHaveStyle({ backgroundColor: '#22d3ee' });
     });
 
     it('should apply yellow color for warning status', () => {
-      render(<BalanceCard total={1000} status="warning" />);
-      const statusBadge = screen.getByRole('status');
-      expect(statusBadge).toHaveStyle({ background: '#f59e0b' });
+      const { container } = render(<BalanceCard total={1000} status="warning" />);
+      const dot = container.querySelector('[aria-hidden="true"]');
+      expect(dot).toHaveStyle({ backgroundColor: '#fbbf24' });
     });
 
     it('should apply red color for low status', () => {
-      render(<BalanceCard total={1000} status="low" />);
-      const statusBadge = screen.getByRole('status');
-      expect(statusBadge).toHaveStyle({ background: '#dc2626' });
+      const { container } = render(<BalanceCard total={1000} status="low" />);
+      const dot = container.querySelector('[aria-hidden="true"]');
+      expect(dot).toHaveStyle({ backgroundColor: '#f87171' });
     });
   });
 
@@ -137,12 +137,12 @@ describe('BalanceCard Component', () => {
 
     it('should show positive trend with up emoji', () => {
       render(<BalanceCard total={1000} showTrend={true} trendPercent={5} />);
-      expect(screen.getByText(/📈/)).toBeInTheDocument();
+      expect(screen.getByText(/▲/)).toBeInTheDocument();
     });
 
     it('should show negative trend with down emoji', () => {
       render(<BalanceCard total={1000} showTrend={true} trendPercent={-5} />);
-      expect(screen.getByText(/📉/)).toBeInTheDocument();
+      expect(screen.getByText(/▼/)).toBeInTheDocument();
     });
 
     it('should format positive trend with plus sign', () => {
@@ -199,42 +199,28 @@ describe('BalanceCard Component', () => {
   });
 
   describe('Style Properties', () => {
-    it('should have gradient background', () => {
+    it('should use card design system class', () => {
       render(<BalanceCard total={1000} />);
       const card = screen.getByRole('region');
-      expect(card).toHaveStyle({
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      });
+      expect(card).toHaveClass('card');
     });
 
-    it('should have white text color', () => {
+    it('should have dense KPI padding', () => {
       render(<BalanceCard total={1000} />);
       const card = screen.getByRole('region');
-      expect(card).toHaveStyle({ color: '#fff' });
+      expect(card).toHaveStyle({ padding: '16px 20px' });
     });
 
-    it('should have padding', () => {
+    it('should use tabular-nums for balance amount', () => {
       render(<BalanceCard total={1000} />);
-      const card = screen.getByRole('region');
-      expect(card).toHaveStyle({
-        padding: '32px 28px',
-      });
+      const heading = screen.getByRole('heading', { level: 2 });
+      expect(heading).toHaveStyle({ fontVariantNumeric: 'tabular-nums' });
     });
 
-    it('should have border radius', () => {
+    it('should have compact balance font size', () => {
       render(<BalanceCard total={1000} />);
-      const card = screen.getByRole('region');
-      expect(card).toHaveStyle({
-        borderRadius: '12px',
-      });
-    });
-
-    it('should have box shadow', () => {
-      render(<BalanceCard total={1000} />);
-      const card = screen.getByRole('region');
-      expect(card).toHaveStyle({
-        boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
-      });
+      const heading = screen.getByRole('heading', { level: 2 });
+      expect(heading).toHaveStyle({ fontSize: 'var(--font-size-2xl)' });
     });
   });
 
@@ -274,6 +260,78 @@ describe('BalanceCard Component', () => {
 
       rerender(<BalanceCard total={1000} status="low" />);
       expect(screen.getByText('Low Balance')).toBeInTheDocument();
+    });
+  });
+
+  describe('Available and Held Balance', () => {
+    it('should display available balance when provided', () => {
+      render(<BalanceCard total={1000} availableBalance={800} />);
+      expect(screen.getByText('Available')).toBeInTheDocument();
+      expect(screen.getByText(/\$800\.00/)).toBeInTheDocument();
+    });
+
+    it('should display held balance when provided', () => {
+      render(<BalanceCard total={1000} heldBalance={200} />);
+      expect(screen.getByText('Held')).toBeInTheDocument();
+      expect(screen.getByText(/\$200\.00/)).toBeInTheDocument();
+    });
+
+    it('should display both available and held balance', () => {
+      render(<BalanceCard total={1000} availableBalance={800} heldBalance={200} />);
+      expect(screen.getByText('Available')).toBeInTheDocument();
+      expect(screen.getByText('Held')).toBeInTheDocument();
+    });
+
+    it('should not display available/held section when neither is provided', () => {
+      render(<BalanceCard total={1000} />);
+      expect(screen.queryByText('Available')).not.toBeInTheDocument();
+      expect(screen.queryByText('Held')).not.toBeInTheDocument();
+    });
+
+    it('should display only available when held is omitted', () => {
+      render(<BalanceCard total={1000} availableBalance={950} />);
+      expect(screen.getByText('Available')).toBeInTheDocument();
+      expect(screen.queryByText('Held')).not.toBeInTheDocument();
+    });
+
+    it('should display only held when available is omitted', () => {
+      render(<BalanceCard total={1000} heldBalance={50} />);
+      expect(screen.queryByText('Available')).not.toBeInTheDocument();
+      expect(screen.getByText('Held')).toBeInTheDocument();
+    });
+
+    it('should format available balance with currency', () => {
+      render(<BalanceCard total={1000} availableBalance={800.5} currency="NZD" />);
+      expect(screen.getByText(/\$800\.50/)).toBeInTheDocument();
+    });
+
+    it('should format held balance with currency', () => {
+      render(<BalanceCard total={1000} heldBalance={199.99} />);
+      expect(screen.getByText(/\$199\.99/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Sparkline', () => {
+    it('should not render sparkline when sparklineData is not provided', () => {
+      const { container } = render(<BalanceCard total={1000} />);
+      expect(container.querySelector('.recharts-responsive-container')).not.toBeInTheDocument();
+    });
+
+    it('should not render sparkline when sparklineData has one point', () => {
+      const { container } = render(<BalanceCard total={1000} sparklineData={[100]} />);
+      expect(container.querySelector('.recharts-responsive-container')).not.toBeInTheDocument();
+    });
+
+    it('should render sparkline container when sparklineData has multiple points', () => {
+      const { container } = render(<BalanceCard total={1000} sparklineData={[100, 150, 200, 175]} />);
+      const sparkWrapper = container.querySelector('[aria-hidden="true"]');
+      expect(sparkWrapper).toBeInTheDocument();
+    });
+
+    it('should render sparkline with aria-hidden to hide from screen readers', () => {
+      const { container } = render(<BalanceCard total={1000} sparklineData={[100, 200, 300]} />);
+      const hiddenEl = container.querySelector('[aria-hidden="true"]');
+      expect(hiddenEl).toBeInTheDocument();
     });
   });
 });

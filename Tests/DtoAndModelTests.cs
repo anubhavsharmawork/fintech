@@ -154,7 +154,7 @@ public class DtoAndModelTests
         dto.AccountId.Should().Be(Guid.Empty);
         dto.Amount.Should().Be(0);
         dto.Type.Should().BeEmpty();
-        dto.Currency.Should().Be("USD");
+        dto.Currency.Should().Be("NZD");
         dto.PayeeName.Should().BeEmpty();
         dto.PayeeAccountNumber.Should().BeNull();
         dto.Description.Should().BeNull();
@@ -207,7 +207,7 @@ public class DtoAndModelTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             100m,
-            "USD",
+            "NZD",
             "debit",
             DateTime.UtcNow
         );
@@ -258,7 +258,7 @@ public class DtoAndModelTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             100m,
-            "USD",
+            "NZD",
             "debit",
             DateTime.UtcNow
         );
@@ -281,8 +281,8 @@ public class DtoAndModelTests
         var id3 = Guid.NewGuid();
         var createdAt = DateTime.UtcNow;
 
-        var record1 = new TransactionCreated(id1, id2, id3, 100m, "USD", "debit", createdAt);
-        var record2 = new TransactionCreated(id1, id2, id3, 100m, "USD", "debit", createdAt);
+        var record1 = new TransactionCreated(id1, id2, id3, 100m, "NZD", "debit", createdAt);
+        var record2 = new TransactionCreated(id1, id2, id3, 100m, "NZD", "debit", createdAt);
 
         // Assert
         record1.Should().Be(record2);
@@ -298,7 +298,7 @@ public class DtoAndModelTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             100m,
-            "USD",
+            "NZD",
             "debit",
             DateTime.UtcNow
         );
@@ -309,7 +309,7 @@ public class DtoAndModelTests
         // Assert
         str.Should().Contain("TransactionCreated");
         str.Should().Contain("100");
-        str.Should().Contain("USD");
+        str.Should().Contain("NZD");
     }
 
     #endregion
@@ -337,13 +337,16 @@ public class DtoAndModelTests
         var request = new RegisterRequest("test@example.com", "password", "John", "Doe");
 
         // Act
-        var (email, password, firstName, lastName) = request;
+        var (email, password, firstName, lastName, clientType, companyName, registrationNumber) = request;
 
         // Assert
         email.Should().Be("test@example.com");
         password.Should().Be("password");
         firstName.Should().Be("John");
         lastName.Should().Be("Doe");
+        clientType.Should().Be("Individual");
+        companyName.Should().BeNull();
+        registrationNumber.Should().BeNull();
     }
 
     #endregion
@@ -418,12 +421,12 @@ public class DtoAndModelTests
     public void CreateAccountRequest_CanBeCreated()
     {
         // Act
-        var request = new CreateAccountRequest("Checking", "USD");
+        var request = new CreateAccountRequest("Checking", "NZD");
 
         // Assert
         request.Should().NotBeNull();
         request.AccountType.Should().Be("Checking");
-        request.Currency.Should().Be("USD");
+        request.Currency.Should().Be("NZD");
     }
 
     [Fact]

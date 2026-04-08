@@ -36,6 +36,14 @@ describe('Register Page', () => {
       expect(screen.getByRole('heading', { name: /create your account/i })).toBeInTheDocument();
     });
 
+    it('should render the same branding as login', () => {
+      renderRegister();
+
+      expect(screen.getByAltText(/fintech logo/i)).toBeInTheDocument();
+      expect(screen.getByText(/fintech application/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /every account\. every chain\./i })).toBeInTheDocument();
+    });
+
     it('should render first name input field', () => {
       renderRegister();
 
@@ -354,7 +362,7 @@ describe('Register Page', () => {
     it('should have auth-container class on wrapper', () => {
       const { container } = renderRegister();
 
-      expect(container.querySelector('.auth-container')).toBeInTheDocument();
+      expect(container.querySelector('.auth-split-layout')).toBeInTheDocument();
     });
 
     it('should have auth-card class on form card', () => {

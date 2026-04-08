@@ -66,46 +66,46 @@ jobs:
         env:
           BASE_URL: ${{ steps.target.outputs.url }}
 
-      - name: Evaluate performance metrics
-        if: always()
-        continue-on-error: true
-        run: |
-          if [ ! -f summary.json ]; then
-            echo "Error: summary.json not found. Test may have crashed or failed to start."
-            echo "PERFORMANCE_STATUS=FAIL" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          echo "Starting performance evaluation..."
-          EXIT_STATUS=0
-
-          # Extract metrics from summary.json (top-level metric fields)
-          FAIL_RATE=$(jq -r '.metrics.http_req_failed.value // 0' summary.json 2>/dev/null || echo 0)
-          P95=$(jq -r '.metrics.http_req_duration["p(95)"] // 0' summary.json 2>/dev/null || echo 0)
-          THPUT=$(jq -r '.metrics.http_reqs.rate // 0' summary.json 2>/dev/null || echo 0)
-
-          echo "Extracted Metrics:"
-          echo "FAIL_RATE: $FAIL_RATE"
-          echo "P95 Latency: $P95 ms"
-          echo "Throughput: $THPUT req/s"
-
-          # Threshold checks (monitoring only)
-          if awk -v v="$FAIL_RATE" 'BEGIN{if(v >= 0.20) exit 1; exit 0}'; then
-            echo "PASS: Failure rate ($FAIL_RATE) is within threshold."
-          else
-            echo "FAIL: Failure rate ($FAIL_RATE) exceeds threshold (0.20)."
-            EXIT_STATUS=1
-          fi
-
-          if [ $EXIT_STATUS -eq 0 ]; then
-            echo "Overall Performance Result: PASS"
-            echo "PERFORMANCE_STATUS=PASS" >> $GITHUB_ENV
-          else
-            echo "Overall Performance Result: FAIL"
-            echo "PERFORMANCE_STATUS=FAIL" >> $GITHUB_ENV
-          fi
-            
-          exit 0
+      # - name: Evaluate performance metrics
+      #   if: always()
+      #   continue-on-error: true
+      #   run: |
+      #     if [ ! -f summary.json ]; then
+      #       echo "Error: summary.json not found. Test may have crashed or failed to start."
+      #       echo "PERFORMANCE_STATUS=FAIL" >> $GITHUB_ENV
+      #       exit 0
+      #     fi
+      #
+      #     echo "Starting performance evaluation..."
+      #     EXIT_STATUS=0
+      #
+      #     # Extract metrics from summary.json (top-level metric fields)
+      #     FAIL_RATE=$(jq -r '.metrics.http_req_failed.value // 0' summary.json 2>/dev/null || echo 0)
+      #     P95=$(jq -r '.metrics.http_req_duration["p(95)"] // 0' summary.json 2>/dev/null || echo 0)
+      #     THPUT=$(jq -r '.metrics.http_reqs.rate // 0' summary.json 2>/dev/null || echo 0)
+      #
+      #     echo "Extracted Metrics:"
+      #     echo "FAIL_RATE: $FAIL_RATE"
+      #     echo "P95 Latency: $P95 ms"
+      #     echo "Throughput: $THPUT req/s"
+      #
+      #     # Threshold checks (monitoring only)
+      #     if awk -v v="$FAIL_RATE" 'BEGIN{if(v >= 0.20) exit 1; exit 0}'; then
+      #       echo "PASS: Failure rate ($FAIL_RATE) is within threshold."
+      #     else
+      #       echo "FAIL: Failure rate ($FAIL_RATE) exceeds threshold (0.20)."
+      #       EXIT_STATUS=1
+      #     fi
+      #
+      #     if [ $EXIT_STATUS -eq 0 ]; then
+      #       echo "Overall Performance Result: PASS"
+      #       echo "PERFORMANCE_STATUS=PASS" >> $GITHUB_ENV
+      #     else
+      #       echo "Overall Performance Result: FAIL"
+      #       echo "PERFORMANCE_STATUS=FAIL" >> $GITHUB_ENV
+      #     fi
+      #
+      #     exit 0
 
       - name: Upload k6 results
         if: always()

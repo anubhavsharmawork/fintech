@@ -117,12 +117,13 @@ describe('Login Page', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/users/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: 'user@example.com', password: 'password123' }),
-          credentials: 'include',
-        });
+        const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+        expect(url).toBe('/users/login');
+        expect(init.method).toBe('POST');
+        expect(init.credentials).toBe('include');
+        const headers = init.headers as Headers;
+        expect(headers.get('Content-Type')).toBe('application/json');
+        expect(JSON.parse(init.body)).toEqual({ email: 'user@example.com', password: 'password123' });
       });
     });
 
@@ -180,7 +181,7 @@ describe('Login Page', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button')).toBeDisabled();
+        expect(screen.getByRole('button', { name: /logging in/i })).toBeDisabled();
       });
     });
   });
@@ -349,7 +350,7 @@ describe('Login Page', () => {
     it('should have auth-container class on wrapper', () => {
       const { container } = renderLogin();
 
-      expect(container.querySelector('.auth-container')).toBeInTheDocument();
+      expect(container.querySelector('.auth-split-layout')).toBeInTheDocument();
     });
 
     it('should have auth-card class on form card', () => {

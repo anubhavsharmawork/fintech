@@ -2,6 +2,7 @@ setup:
   addons:
     - plan: heroku-postgresql:hobby-dev
     - plan: cloudamqp:lemur
+    - plan: heroku-redis:mini
     - plan: papertrail
 
 build:

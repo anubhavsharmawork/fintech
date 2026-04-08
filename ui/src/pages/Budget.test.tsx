@@ -9,6 +9,20 @@ import { ToastProvider } from '../components/Toast';
 jest.mock('../auth');
 jest.mock('../hooks/useFMode');
 
+// Mock Recharts to avoid rendering issues in tests
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div data-testid="responsive-container">{children}</div>,
+  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
+  Pie: () => <div data-testid="pie" />,
+  Cell: () => null,
+  BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
+  Bar: () => <div data-testid="bar" />,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+}));
+
 describe('Budget Page', () => {
   const mockToggle = jest.fn();
   const mockAuthFetch = auth.authFetch as jest.Mock;
@@ -760,6 +774,71 @@ describe('Budget Page', () => {
     });
   });
 
+  describe('View Step date range interaction', () => {
+    beforeEach(() => {
+      localStorage.setItem('budgetStep', 'view');
+      localStorage.setItem('budgetIncome', '5000');
+      localStorage.setItem('budgetGoal', 'balanced');
+      mockAuthFetch.mockImplementation((url: string) => {
+        if (url === '/accounts') {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [{ id: 'acc1', accountNumber: 'ACC001', accountType: 'Checking' }],
+          });
+        }
+        if (url.includes('/budget/budget')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              fun: 25, fixed: 50, future: 25, total: 100,
+              period: { from: '2024-01-01', to: '2024-01-31' },
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      });
+    });
+
+    it('should change from-date and trigger refetch', async () => {
+      renderBudget();
+      await waitFor(() => expect(screen.getByLabelText('From')).toBeInTheDocument());
+      const fromInput = screen.getByLabelText('From') as HTMLInputElement;
+      fireEvent.change(fromInput, { target: { value: '2024-02-01' } });
+      expect(fromInput.value).toBe('2024-02-01');
+    });
+
+    it('should change to-date and trigger refetch', async () => {
+      renderBudget();
+      await waitFor(() => expect(screen.getByLabelText('To')).toBeInTheDocument());
+      const toInput = screen.getByLabelText('To') as HTMLInputElement;
+      fireEvent.change(toInput, { target: { value: '2024-02-28' } });
+      expect(toInput.value).toBe('2024-02-28');
+    });
+  });
+
+  describe('F-Mode view step message', () => {
+    it('shows fiat-only message on view step when F-Mode is enabled', async () => {
+      (fModeHook.useFMode as jest.Mock).mockReturnValue({ enabled: true, toggle: mockToggle });
+      localStorage.setItem('budgetStep', 'view');
+      localStorage.setItem('budgetIncome', '5000');
+      localStorage.setItem('budgetGoal', 'balanced');
+      renderBudget();
+      await waitFor(() => {
+        expect(screen.getByText('Budgeting is currently focused on Fiat accounts.')).toBeInTheDocument();
+      });
+    });
+
+    it('shows switch-to-fiat hint when F-Mode is enabled on view step', async () => {
+      (fModeHook.useFMode as jest.Mock).mockReturnValue({ enabled: true, toggle: mockToggle });
+      localStorage.setItem('budgetStep', 'view');
+      localStorage.setItem('budgetIncome', '5000');
+      renderBudget();
+      await waitFor(() => {
+        expect(screen.getByText('Switch to Fiat mode to view your conscious spending breakdown.')).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Budget Goal Info Display', () => {
     it('should display goal descriptions for all presets', async () => {
       renderBudget();
@@ -785,6 +864,74 @@ describe('Budget Page', () => {
         expect(fixedLabels.length).toBeGreaterThan(0);
         expect(futureLabels.length).toBeGreaterThan(0);
         expect(funLabels.length).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  describe('handleIncomeSubmit validation', () => {
+    it('should show error when income value is zero', async () => {
+      renderBudget();
+
+      await waitFor(() => {
+        expect(screen.getByText('Select Your Budget Goal')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText(/next.*enter income/i));
+
+      await waitFor(() => {
+        expect(screen.getByText('Enter Your Monthly Income')).toBeInTheDocument();
+      });
+
+      const incomeInput = screen.getByRole('spinbutton');
+      fireEvent.change(incomeInput, { target: { value: '0' } });
+      fireEvent.click(screen.getByRole('button', { name: /create budget plan/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a valid monthly income')).toBeInTheDocument();
+      });
+    });
+
+    it('should show error when income value is negative', async () => {
+      renderBudget();
+
+      await waitFor(() => {
+        expect(screen.getByText('Select Your Budget Goal')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText(/next.*enter income/i));
+
+      await waitFor(() => {
+        expect(screen.getByText('Enter Your Monthly Income')).toBeInTheDocument();
+      });
+
+      const incomeInput = screen.getByRole('spinbutton');
+      fireEvent.change(incomeInput, { target: { value: '-100' } });
+      fireEvent.click(screen.getByRole('button', { name: /create budget plan/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a valid monthly income')).toBeInTheDocument();
+      });
+    });
+
+    it('should show success toast and navigate to view step for valid income', async () => {
+      renderBudget();
+
+      await waitFor(() => {
+        expect(screen.getByText('Select Your Budget Goal')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText(/next.*enter income/i));
+
+      await waitFor(() => {
+        expect(screen.getByText('Enter Your Monthly Income')).toBeInTheDocument();
+      });
+
+      const incomeInput = screen.getByRole('spinbutton');
+      fireEvent.change(incomeInput, { target: { value: '5000' } });
+      fireEvent.click(screen.getByRole('button', { name: /create budget plan/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/budget plan created/i)).toBeInTheDocument();
       });
     });
   });

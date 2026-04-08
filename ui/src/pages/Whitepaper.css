@@ -1,0 +1,617 @@
+/* ══════════════════════════════════════════════════════════════
+   Whitepaper — Premium dark-mode-first aesthetic
+   Deep navy, gold accents, clean white typography
+   ══════════════════════════════════════════════════════════════ */
+
+.wp {
+  --wp-bg: #0a0f1e;
+  --wp-bg-alt: #0e1529;
+  --wp-surface: #131b2e;
+  --wp-border: #1e2a45;
+  --wp-gold: #d4a853;
+  --wp-gold-dim: rgba(212, 168, 83, 0.15);
+  --wp-text: #e8ecf4;
+  --wp-text-muted: #8b95a8;
+  --wp-text-bright: #ffffff;
+  --wp-accent-blue: #3b82f6;
+  --wp-accent-green: #10b981;
+  --wp-radius: 12px;
+  --wp-max: 860px;
+  --wp-toc-width: 240px;
+
+  background: var(--wp-bg);
+  color: var(--wp-text);
+  min-height: 100vh;
+  position: relative;
+  margin: -24px;
+  padding: 0;
+}
+
+/* ── Print / PDF ─────────────────────────────────── */
+@media print {
+  .wp { background: #fff; color: #111; margin: 0; padding: 2rem; }
+  .wp-toc, .wp-hero-cta, .wp-download-btn, .wp-version-badge { display: none !important; }
+  .wp-main { margin-left: 0 !important; max-width: 100% !important; }
+  .wp-section { break-inside: avoid; border-color: #ddd !important; background: transparent !important; }
+  .wp-section-title { color: #111 !important; }
+  .wp-pullquote { border-color: #999 !important; color: #333 !important; }
+  .wp-callout { background: #f5f5f5 !important; border-color: #ddd !important; color: #111 !important; }
+  .wp h1, .wp h2, .wp h3 { color: #111 !important; }
+  .wp p, .wp li { color: #333 !important; }
+}
+
+/* Ensure sections are fully visible when printing — intersection-observer
+   based reveal can leave many sections invisible in generated PDFs. */
+@media print {
+  .wp-section { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .wp-section.wp-visible { opacity: 1 !important; transform: none !important; }
+}
+
+/* When printing from the UI via the Download PDF button we temporarily
+   add .wp-print-mode to the root .wp element so sections are visible
+   immediately. This mirrors the @media print fallback but is applied
+   for the on-screen render-before-print flow. */
+.wp-print-mode .wp-section {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* ── Layout ──────────────────────────────────────── */
+.wp-layout {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  gap: 2.5rem;
+}
+
+/* ── Table of Contents (Sticky Sidebar) ──────────── */
+.wp-toc {
+  position: sticky;
+  top: 80px;
+  width: var(--wp-toc-width);
+  flex-shrink: 0;
+  height: fit-content;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  padding: 1.5rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wp-border) transparent;
+}
+
+.wp-toc-title {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wp-gold);
+  margin: 0 0 1rem;
+  padding: 0 0.75rem;
+}
+
+.wp-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wp-toc-item {
+  margin: 0;
+}
+
+.wp-toc-link {
+  display: block;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--wp-text-muted);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  line-height: 1.45;
+}
+
+.wp-toc-link:hover {
+  color: var(--wp-text);
+  background: rgba(255,255,255,0.03);
+}
+
+.wp-toc-link:focus-visible {
+  outline: 2px solid var(--wp-gold);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.wp-toc-link.active {
+  color: var(--wp-gold);
+  border-left-color: var(--wp-gold);
+  background: var(--wp-gold-dim);
+}
+
+/* Mobile TOC toggle */
+.wp-toc-toggle {
+  display: none;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  color: var(--wp-gold);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.wp-toc-toggle:focus-visible {
+  outline: 2px solid var(--wp-gold);
+  outline-offset: 2px;
+}
+
+/* ── Main Content ────────────────────────────────── */
+.wp-main {
+  flex: 1;
+  min-width: 0;
+  max-width: var(--wp-max);
+  padding: 2rem 0 4rem;
+}
+
+/* ── Hero / Abstract ─────────────────────────────── */
+.wp-hero {
+  padding: 3rem 0 2.5rem;
+  border-bottom: 1px solid var(--wp-border);
+  margin-bottom: 3rem;
+}
+
+.wp-hero-label {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--wp-gold);
+  margin-bottom: 1rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--wp-gold);
+  border-radius: 999px;
+}
+
+.wp-hero h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: var(--wp-text-bright);
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.wp-hero-subtitle {
+  font-size: 1rem;
+  color: var(--wp-text-muted);
+  margin: 0 0 1.5rem;
+  font-weight: 400;
+}
+
+.wp-hero-abstract {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--wp-text);
+  max-width: 65ch;
+  margin: 0;
+}
+
+.wp-hero-abstract strong {
+  color: var(--wp-text-bright);
+  font-weight: 600;
+}
+
+.wp-hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.wp-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  background: var(--wp-gold);
+  color: #0a0f1e;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  text-decoration: none;
+}
+
+.wp-download-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(212, 168, 83, 0.3);
+}
+
+.wp-download-btn:focus-visible {
+  outline: 3px solid var(--wp-gold);
+  outline-offset: 3px;
+}
+
+.wp-version-badge {
+  font-size: 0.75rem;
+  color: var(--wp-text-muted);
+  font-weight: 500;
+}
+
+/* ── Sections ────────────────────────────────────── */
+.wp-section {
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--wp-border);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.wp-section.wp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.wp-section:last-child {
+  border-bottom: none;
+}
+
+.wp-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--wp-gold-dim);
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.wp-section-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--wp-text-bright);
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.wp-section-label {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wp-gold);
+  margin-bottom: 0.75rem;
+}
+
+.wp-body {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--wp-text);
+}
+
+.wp-body p {
+  margin: 0 0 1rem;
+}
+
+.wp-body strong {
+  color: var(--wp-text-bright);
+  font-weight: 600;
+}
+
+/* ── Pull Quotes ─────────────────────────────────── */
+.wp-pullquote {
+  border-left: 3px solid var(--wp-gold);
+  padding: 1rem 0 1rem 1.25rem;
+  margin: 1.5rem 0;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--wp-gold);
+  line-height: 1.55;
+}
+
+/* ── Data Callouts ───────────────────────────────── */
+.wp-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  padding: 1.15rem 1.25rem;
+  margin: 1.25rem 0;
+}
+
+.wp-callout-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.wp-callout-text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--wp-text);
+}
+
+.wp-callout-text strong {
+  color: var(--wp-text-bright);
+}
+
+/* ── Stats Grid ──────────────────────────────────── */
+.wp-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.wp-stat {
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  padding: 1.15rem 1.25rem;
+  text-align: center;
+}
+
+.wp-stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--wp-gold);
+  line-height: 1.2;
+}
+
+.wp-stat-label {
+  font-size: 0.75rem;
+  color: var(--wp-text-muted);
+  margin-top: 0.25rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Feature Lists ───────────────────────────────── */
+.wp-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.wp-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.5rem 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--wp-text);
+}
+
+.wp-feature-check {
+  color: var(--wp-accent-green);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 3px;
+  font-size: 0.875rem;
+}
+
+/* ── Architecture Grid ───────────────────────────── */
+.wp-arch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.wp-arch-card {
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  padding: 1.25rem;
+  transition: border-color 0.2s;
+}
+
+.wp-arch-card:hover {
+  border-color: var(--wp-gold);
+}
+
+.wp-arch-card-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.wp-arch-card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--wp-text-bright);
+  margin: 0 0 0.35rem;
+}
+
+.wp-arch-card-desc {
+  font-size: 0.8125rem;
+  color: var(--wp-text-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Comparison (Urgency section) ────────────────── */
+.wp-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.wp-compare-col {
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius);
+  padding: 1.25rem;
+}
+
+.wp-compare-col.wp-compare-gain {
+  border-color: var(--wp-accent-green);
+}
+
+.wp-compare-col.wp-compare-lose {
+  border-color: #ef4444;
+}
+
+.wp-compare-heading {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 0.75rem;
+}
+
+.wp-compare-gain .wp-compare-heading {
+  color: var(--wp-accent-green);
+}
+
+.wp-compare-lose .wp-compare-heading {
+  color: #ef4444;
+}
+
+.wp-compare-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wp-compare-list li {
+  padding: 0.35rem 0;
+  font-size: 0.875rem;
+  color: var(--wp-text);
+  line-height: 1.5;
+}
+
+/* ── Manifesto ───────────────────────────────────── */
+.wp-manifesto {
+  text-align: center;
+  padding: 3rem 1rem;
+  margin: 2rem 0;
+  border: 1px solid var(--wp-gold);
+  border-radius: var(--wp-radius);
+  background: linear-gradient(135deg, rgba(212,168,83,0.06), transparent);
+}
+
+.wp-manifesto p {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.9;
+  color: var(--wp-text-bright);
+  max-width: 55ch;
+  margin: 0 auto;
+}
+
+.wp-manifesto-sig {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--wp-gold);
+  margin-top: 1.5rem;
+  font-style: italic;
+}
+
+/* ── Footer Badge ────────────────────────────────── */
+.wp-footer {
+  text-align: center;
+  padding: 2rem 0;
+  border-top: 1px solid var(--wp-border);
+  margin-top: 2rem;
+}
+
+.wp-footer-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wp-text-muted);
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--wp-border);
+  border-radius: 999px;
+}
+
+.wp-footer-author {
+  margin-top: 0.75rem;
+  font-size: 0.6875rem;
+  color: var(--wp-text-muted);
+  opacity: 0.55;
+  letter-spacing: 0.04em;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 900px) {
+  .wp-toc {
+    display: none;
+    position: static;
+    width: 100%;
+    max-height: none;
+    padding: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .wp-toc.wp-toc-open {
+    display: block;
+  }
+
+  .wp-toc-toggle {
+    display: block;
+  }
+
+  .wp-layout {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .wp-main {
+    padding: 1rem 0 3rem;
+  }
+
+  .wp-hero {
+    padding: 2rem 0 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .wp-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .wp-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem 0;
+  }
+
+  .wp-compare {
+    grid-template-columns: 1fr;
+  }
+
+  .wp-arch-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .wp-layout {
+    padding: 0 1rem;
+  }
+
+  .wp-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}

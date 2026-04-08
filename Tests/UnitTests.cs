@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using UserService.Controllers;
 using UserService.Data;
+using UserService.Services;
 using Xunit;
 
 namespace Tests;
@@ -30,7 +31,7 @@ public class UserServiceTests
             })
             .Build();
 
-        var controller = new UsersController(db, logger.Object, inMemoryConfig)
+        var controller = new UsersController(db, logger.Object, inMemoryConfig, new PasswordHasherService())
         {
             ControllerContext = new ControllerContext
             {
@@ -79,7 +80,7 @@ public class UserServiceTests
         {
             Id = Guid.NewGuid(),
             Email = "dup@example.com",
-            PasswordHash = UsersController.HashPasswordStatic("secret"),
+            PasswordHash = new PasswordHasherService().Hash("secret"),
             FirstName = "Jane",
             LastName = "Smith",
             IsEmailVerified = true,
@@ -107,7 +108,7 @@ public class UserServiceTests
         {
             Id = Guid.NewGuid(),
             Email = email,
-            PasswordHash = UsersController.HashPasswordStatic("Password#123"),
+            PasswordHash = new PasswordHasherService().Hash("Password#123"),
             FirstName = "User",
             LastName = "One",
             IsEmailVerified = true,
@@ -137,7 +138,7 @@ public class UserServiceTests
         {
             Id = Guid.NewGuid(),
             Email = email,
-            PasswordHash = UsersController.HashPasswordStatic("correct"),
+            PasswordHash = new PasswordHasherService().Hash("correct"),
             FirstName = "User",
             LastName = "Two",
             IsEmailVerified = true,
@@ -178,7 +179,7 @@ public class UserServiceTests
         {
             Id = Guid.NewGuid(),
             Email = "p@example.com",
-            PasswordHash = UsersController.HashPasswordStatic("x"),
+            PasswordHash = new PasswordHasherService().Hash("x"),
             FirstName = "Pro",
             LastName = "File",
             IsEmailVerified = true,
@@ -213,7 +214,7 @@ public class UserServiceTests
         {
             Id = Guid.NewGuid(),
             Email = "verify@example.com",
-            PasswordHash = UsersController.HashPasswordStatic("x"),
+            PasswordHash = new PasswordHasherService().Hash("x"),
             FirstName = "Ver",
             LastName = "Ify",
             IsEmailVerified = false,

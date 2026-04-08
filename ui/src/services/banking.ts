@@ -1,5 +1,8 @@
 // Bank connection service for Open Banking integration
 
+import { apiGet, apiPost, apiDelete, apiRequest, ApiError } from '../api/apiClient';
+import { API } from '../config/constants';
+
 export interface AvailableBank {
   id: string;
   name: string;
@@ -28,50 +31,34 @@ export interface ExternalBankAccount {
   bankLogo: string;
 }
 
-const getAuthHeader = (): HeadersInit => {
-  const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : ''
-  };
-};
-
 /**
  * Get list of available banks for connection.
  */
 export async function getAvailableBanks(country?: string): Promise<AvailableBank[]> {
-  const url = country 
-    ? `/bankconnections/available?country=${encodeURIComponent(country)}`
-    : '/bankconnections/available';
-
-  const res = await fetch(url, { headers: getAuthHeader() });
-  if (!res.ok) throw new Error(`Failed to fetch available banks (${res.status})`);
-  return res.json();
+  const url = country
+    ? `${API.BANK_CONNECTIONS_AVAILABLE}?country=${encodeURIComponent(country)}`
+    : API.BANK_CONNECTIONS_AVAILABLE;
+  return apiGet<AvailableBank[]>(url);
 }
 
 /**
  * Get user's connected banks.
  */
 export async function getConnectedBanks(): Promise<BankConnection[]> {
-  const res = await fetch('/bankconnections', { headers: getAuthHeader() });
-  if (!res.ok) throw new Error(`Failed to fetch connected banks (${res.status})`);
-  return res.json();
+  return apiGet<BankConnection[]>(API.BANK_CONNECTIONS);
 }
 
 /**
  * Connect to a bank (initiates mock OAuth flow).
  */
 export async function connectBank(bankId: string): Promise<{ connectionId: string; accountsImported: number }> {
-  const res = await fetch('/bankconnections/connect', {
+  const res = await apiRequest(API.BANK_CONNECTIONS_CONNECT, {
     method: 'POST',
-    headers: getAuthHeader(),
-    body: JSON.stringify({ bankId })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bankId }),
   });
-
-  if (res.status === 409) {
-    throw new Error('Bank already connected');
-  }
-  if (!res.ok) throw new Error(`Failed to connect bank (${res.status})`);
+  if (res.status === 409) throw new Error('Bank already connected');
+  if (!res.ok) throw new ApiError(res.status, `Failed to connect bank (${res.status})`);
   return res.json();
 }
 
@@ -79,30 +66,41 @@ export async function connectBank(bankId: string): Promise<{ connectionId: strin
  * Disconnect a bank.
  */
 export async function disconnectBank(connectionId: string): Promise<void> {
-  const res = await fetch(`/bankconnections/${connectionId}`, {
-    method: 'DELETE',
-    headers: getAuthHeader()
-  });
-  if (!res.ok) throw new Error(`Failed to disconnect bank (${res.status})`);
+  return apiDelete(API.BANK_CONNECTION(connectionId));
 }
 
 /**
  * Get all external bank accounts.
  */
 export async function getExternalAccounts(): Promise<ExternalBankAccount[]> {
-  const res = await fetch('/bankconnections/accounts', { headers: getAuthHeader() });
-  if (!res.ok) throw new Error(`Failed to fetch external accounts (${res.status})`);
-  return res.json();
+  return apiGet<ExternalBankAccount[]>(API.BANK_CONNECTIONS_ACCOUNTS);
 }
 
 /**
  * Sync accounts for a bank connection (refresh balances).
  */
 export async function syncBankAccounts(connectionId: string): Promise<{ syncedAt: string }> {
-  const res = await fetch(`/bankconnections/${connectionId}/sync`, {
-    method: 'POST',
-    headers: getAuthHeader()
-  });
-  if (!res.ok) throw new Error(`Failed to sync accounts (${res.status})`);
-  return res.json();
+  return apiPost<{ syncedAt: string }>(API.BANK_CONNECTION_SYNC(connectionId), {});
+}
+
+export interface DepositFromExternalResponse {
+  depositId: string;
+  accountId: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+/**
+ * Deposit funds from an external bank account into an internal account.
+ */
+export async function depositFromExternal(
+  accountId: string,
+  externalBankAccountId: string,
+  amount: number
+): Promise<DepositFromExternalResponse> {
+  return apiPost<DepositFromExternalResponse>(
+    API.ACCOUNT_DEPOSIT_EXTERNAL(accountId),
+    { externalBankAccountId, amount },
+  );
 }

@@ -2,12 +2,15 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.InMemory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MassTransit;
 using TransactionService.Controllers;
 using TransactionService.Data;
 using TransactionService.Models.Dtos;
+using TransactionService.Services;
 using Contracts.Events;
 
 namespace Tests;
@@ -23,12 +26,22 @@ public class TransactionsControllerExtendedTests
     {
         var options = new DbContextOptionsBuilder<TransactionDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         var db = new TransactionDbContext(options);
-        var logger = new Mock<ILogger<TransactionsController>>();
         var publisher = new Mock<IPublishEndpoint>();
+        var amlChannel = new Mock<IAmlScreeningChannel>();
+        var cacheService = new Mock<ICacheService>();
+        var serviceLogger = new Mock<ILogger<TransactionService.Services.TransactionService>>();
+        amlChannel.Setup(a => a.TryEnqueue(It.IsAny<Transaction>())).Returns(true);
+        var service = new TransactionService.Services.TransactionService(
+            db,
+            publisher.Object,
+            amlChannel.Object,
+            cacheService.Object,
+            serviceLogger.Object);
 
-        var controller = new TransactionsController(db, publisher.Object, logger.Object)
+        var controller = new TransactionsController(service)
         {
             ControllerContext = new ControllerContext
             {
@@ -91,7 +104,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = "Fun",
             TxHash = ""
@@ -117,7 +130,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = "Fun",
             TxHash = "   "
@@ -185,7 +198,7 @@ public class TransactionsControllerExtendedTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        GetProperty(okResult.Value, "currency").Should().Be("USD");
+        GetProperty(okResult.Value, "currency").Should().Be("NZD");
     }
 
     [Fact]
@@ -216,7 +229,7 @@ public class TransactionsControllerExtendedTests
     [Theory]
     [InlineData("btc", "BTC")]
     [InlineData("ETH", "ETH")]
-    [InlineData("uSd", "USD")]
+    [InlineData("NZD", "NZD")]
     [InlineData("GbP", "GBP")]
     public async Task CreateTransaction_NormalizesCurrencyCase(string input, string expected)
     {
@@ -256,7 +269,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = null!,
             SpendingType = "Fun"
         };
@@ -281,7 +294,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "",
             SpendingType = "Fun"
         };
@@ -306,7 +319,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "  credit  ",
             SpendingType = "Fun"
         };
@@ -334,7 +347,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = type,
             SpendingType = "Fun"
         };
@@ -363,7 +376,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = "Fun",
             Description = null
@@ -389,7 +402,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = "Fun",
             Description = "  Coffee at Starbucks  "
@@ -461,7 +474,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = "Fun"
         };
@@ -490,7 +503,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = "Fun"
         };
@@ -516,7 +529,7 @@ public class TransactionsControllerExtendedTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = "Fun"
         };
@@ -545,7 +558,7 @@ public class TransactionsControllerExtendedTests
             AccountId = Guid.NewGuid(),
             UserId = userId,
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             Description = "Test",
             SpendingType = "Fun",
@@ -561,7 +574,7 @@ public class TransactionsControllerExtendedTests
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         var okResult = (OkObjectResult)result;
-        var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<dynamic>().ToList();
+        var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
         transactions.Should().HaveCount(1);
     }
 
@@ -595,8 +608,8 @@ public class TransactionsControllerExtendedTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<object>().ToList();
-        GetProperty(transactions![0], "txHash").Should().Be(txHash);
+        var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
+        GetProperty(transactions[0], "txHash").Should().Be(txHash);
     }
 
     [Fact]
@@ -612,7 +625,7 @@ public class TransactionsControllerExtendedTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<dynamic>().ToList();
+        var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
         transactions.Should().HaveCount(0);
     }
 

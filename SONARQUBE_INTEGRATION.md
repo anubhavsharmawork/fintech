@@ -135,7 +135,8 @@ dotnet sonarscanner begin \
   /d:sonar.host.url="https://sonarcloud.io" \
   /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
   /d:sonar.coverage.exclusions="**/Migrations/**,**/Program.cs,**/Startup.cs,**/Tests/**" \
-  /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/wwwroot/**,**/node_modules/**,**/*.js,**/*.css,**/*.html"
+  /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/wwwroot/**,**/node_modules/**,**/*.js,**/*.css,**/*.html" \
+  /d:sonar.qualitygate.expect.coverage=overall
 
 # Build
 dotnet build Fintech.sln --configuration Release
@@ -171,13 +172,15 @@ dotnet sonarscanner end /d:sonar.token="YOUR_SONAR_TOKEN"
 ### Quality Gates
 
 Default quality gates check:
-- **Coverage**: > 80% (configurable)
+- **Coverage**: > 80% on **overall code** (not new code)
 - **Duplicated Lines**: < 3%
 - **Maintainability Rating**: A
 - **Reliability Rating**: A
 - **Security Rating**: A
 
 Pull requests will show quality gate status and prevent merging if gates fail.
+
+**Note**: The quality gate is configured to measure code coverage against the **overall codebase** (`sonar.qualitygate.expect.coverage=overall`), not just new/modified code. This ensures all code, including legacy code, maintains the minimum coverage threshold.
 
 ## Interpreting Results
 

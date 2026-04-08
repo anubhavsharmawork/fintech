@@ -1,0 +1,164 @@
+/*
+ * Design System Tokens
+ * Single source of truth for all CSS custom properties.
+ * Import this file at the top of index.css.
+ */
+
+:root {
+  /* ─── Colors ─── */
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --accent: #10b981;
+  --text: #111827;
+  --muted: #6b7280;
+  --bg: #f9fafb;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --shadow: 0 8px 16px rgba(17, 24, 39, 0.08);
+
+  /* ─── Border Radius ─── */
+  --radius-card: 14px;
+  --radius-input: 10px;
+  --radius-btn: 10px;
+  --radius-badge: 999px;
+
+  /* ─── Typography ─── */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 2rem;
+
+  /* ─── Transitions ─── */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-interactive: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ─── Z-Index Scale ─── */
+  --z-header: 30;
+  --z-toast: 60;
+  --z-modal: 70;
+  --z-search: 80;
+  --z-overlay: 90;
+
+  /* ─── Transaction Status ─── */
+  --tx-amber: #92400e;
+  --tx-blue: #2563eb;
+  --tx-green: #047857;
+  --tx-red: #dc2626;
+  --tx-gray: #6b7280;
+  --tx-on-fill: #ffffff;
+  --tx-surface-pending: rgba(146, 64, 14, 0.04);
+  --tx-surface-processing: rgba(37, 99, 235, 0.04);
+  --tx-surface-success: rgba(4, 120, 87, 0.04);
+  --tx-surface-error: rgba(220, 38, 38, 0.04);
+  --tx-surface-neutral: rgba(107, 114, 128, 0.04);
+  --tx-success-subtle: rgba(5, 150, 105, 0.08);
+  --tx-red-shadow: rgba(220, 38, 38, 0.3);
+  --tx-card-elevation: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  /* ─── Blotter: Status Pill Badges ─── */
+  --pill-completed-bg: #d1fae5;
+  --pill-completed-text: #065f46;
+  --pill-pending-bg: #fef3c7;
+  --pill-pending-text: #92400e;
+  --pill-failed-bg: #fee2e2;
+  --pill-failed-text: #991b1b;
+  --pill-processing-bg: #dbeafe;
+  --pill-processing-text: #1e40af;
+
+  /* ─── Blotter: Credit / Debit Badges ─── */
+  --pill-credit-bg: #d4edda;
+  --pill-credit-text: #155724;
+  --pill-debit-bg: #f8d7da;
+  --pill-debit-text: #721c24;
+
+  /* ─── Blotter: Spending Category Badges ─── */
+  --pill-fun-bg: #e0f2fe;
+  --pill-fun-text: #0369a1;
+  --pill-fixed-bg: #fef3c7;
+  --pill-fixed-text: #b45309;
+  --pill-future-bg: #d1fae5;
+  --pill-future-text: #047857;
+
+  /* ─── Blotter: Amount Text ─── */
+  --amount-credit: #047857;
+  --amount-debit: #b91c1c;
+
+  /* ─── Semantic: Validation & Hints ─── */
+  --text-error: #b91c1c;
+  --text-success: #047857;
+  --text-hint: #6b7280;
+  --text-hint-subtle: #666666;
+
+  /* ─── Semantic: Tooltip Category Colors ─── */
+  --tooltip-fun: #1d4ed8;
+  --tooltip-fixed: #c2410c;
+  --tooltip-future: #047857;
+
+  /* ─── Surface: Sparkline Card ─── */
+  --surface-card: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* ─── Transaction Status (Dark) ─── */
+    --tx-amber: #fbbf24;
+    --tx-blue: #60a5fa;
+    --tx-green: #34d399;
+    --tx-red: #f87171;
+    --tx-gray: #9ca3af;
+    --tx-on-fill: #ffffff;
+    --tx-surface-pending: rgba(251, 191, 36, 0.06);
+    --tx-surface-processing: rgba(96, 165, 250, 0.06);
+    --tx-surface-success: rgba(52, 211, 153, 0.06);
+    --tx-surface-error: rgba(248, 113, 113, 0.06);
+    --tx-surface-neutral: rgba(156, 163, 175, 0.06);
+    --tx-success-subtle: rgba(52, 211, 153, 0.1);
+    --tx-red-shadow: rgba(248, 113, 113, 0.25);
+    --tx-card-elevation: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.16);
+
+    /* ─── Blotter: Status Pill Badges (Dark) ─── */
+    --pill-completed-bg: rgba(52, 211, 153, 0.15);
+    --pill-completed-text: #6ee7b7;
+    --pill-pending-bg: rgba(251, 191, 36, 0.15);
+    --pill-pending-text: #fcd34d;
+    --pill-failed-bg: rgba(248, 113, 113, 0.15);
+    --pill-failed-text: #fca5a5;
+    --pill-processing-bg: rgba(96, 165, 250, 0.15);
+    --pill-processing-text: #93c5fd;
+
+    /* ─── Blotter: Credit / Debit Badges (Dark) ─── */
+    --pill-credit-bg: rgba(52, 211, 153, 0.15);
+    --pill-credit-text: #6ee7b7;
+    --pill-debit-bg: rgba(248, 113, 113, 0.15);
+    --pill-debit-text: #fca5a5;
+
+    /* ─── Blotter: Spending Category Badges (Dark) ─── */
+    --pill-fun-bg: rgba(96, 165, 250, 0.15);
+    --pill-fun-text: #93c5fd;
+    --pill-fixed-bg: rgba(251, 191, 36, 0.15);
+    --pill-fixed-text: #fcd34d;
+    --pill-future-bg: rgba(52, 211, 153, 0.15);
+    --pill-future-text: #6ee7b7;
+
+    /* ─── Blotter: Amount Text (Dark) ─── */
+    --amount-credit: #34d399;
+    --amount-debit: #f87171;
+
+    /* ─── Semantic: Validation & Hints (Dark) ─── */
+    --text-error: #f87171;
+    --text-success: #34d399;
+    --text-hint: #9ca3af;
+    --text-hint-subtle: #9ca3af;
+
+    /* ─── Semantic: Tooltip Category Colors (Dark) ─── */
+    --tooltip-fun: #60a5fa;
+    --tooltip-fixed: #fb923c;
+    --tooltip-future: #34d399;
+
+    /* ─── Surface: Sparkline Card (Dark) ─── */
+    --surface-card: #1f2937;
+  }
+}

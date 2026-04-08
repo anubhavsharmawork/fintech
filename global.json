@@ -1,0 +1,9 @@
+{
+  // Repository-wide SDK pin. Do not override at the project level.
+  // rollForward = latestPatch allows patch-level security updates while
+  // keeping the major/minor version consistent across all services.
+  "sdk": {
+    "version": "10.0.201",
+    "rollForward": "latestPatch"
+  }
+}

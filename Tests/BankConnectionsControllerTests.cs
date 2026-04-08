@@ -8,6 +8,8 @@ using Moq;
 using AccountService.Controllers;
 using AccountService.Data;
 using AccountService.Models;
+using AccountService.Policy;
+using Tests.Mocks;
 
 namespace Tests;
 
@@ -22,7 +24,7 @@ public class BankConnectionsControllerTests
         var db = new AccountDbContext(options);
         var loggerMock = new Mock<ILogger<BankConnectionsController>>();
 
-        var controller = new BankConnectionsController(db, loggerMock.Object)
+        var controller = new BankConnectionsController(db, loggerMock.Object, new AllowAllLimitPolicy())
         {
             ControllerContext = new ControllerContext
             {
@@ -263,7 +265,7 @@ public class BankConnectionsControllerTests
              AccountType = "Checking",
              AccountNumber = "1234",
              Balance = 100m,
-             Currency = "USD",
+             Currency = "NZD",
              LastSyncedAt = DateTime.UtcNow
         });
         await db.SaveChangesAsync();

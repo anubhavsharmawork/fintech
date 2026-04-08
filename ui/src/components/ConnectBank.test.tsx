@@ -264,4 +264,237 @@ describe('ConnectBank Component', () => {
       });
     });
   });
+
+  describe('Keyboard Navigation', () => {
+    it('should select bank tile on Enter key', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      const anzTile = screen.getByText('ANZ').closest('[tabindex="0"]')!;
+      fireEvent.keyDown(anzTile, { key: 'Enter' });
+
+      await waitFor(() => {
+        expect(screen.getByText(/ready to link anz/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should select bank tile on Space key', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      const anzTile = screen.getByText('ANZ').closest('[tabindex="0"]')!;
+      fireEvent.keyDown(anzTile, { key: ' ' });
+
+      await waitFor(() => {
+        expect(screen.getByText(/ready to link anz/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should not select bank tile on other keys', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      const anzTile = screen.getByText('ANZ').closest('[tabindex="0"]')!;
+      fireEvent.keyDown(anzTile, { key: 'Tab' });
+
+      expect(screen.queryByText(/ready to link anz/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Confirmation Panel', () => {
+    it('should show confirmation panel when tile is clicked', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('ANZ').closest('[tabindex="0"]')!);
+
+      await waitFor(() => {
+        expect(screen.getByText(/ready to link anz/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should dismiss confirmation panel on cancel', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('ANZ').closest('[tabindex="0"]')!);
+
+      await waitFor(() => {
+        expect(screen.getByText(/ready to link anz/i)).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+      await waitFor(() => {
+        expect(screen.queryByText(/ready to link anz/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it('should connect via Proceed to Connect button in confirmation panel', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('ANZ').closest('[tabindex="0"]')!);
+
+      await waitFor(() => {
+        expect(screen.getByText(/proceed to connect/i)).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText(/proceed to connect/i));
+
+      await waitFor(() => {
+        expect(mockConnectBank).toHaveBeenCalledWith('anz');
+      });
+    });
+  });
+
+  describe('Image Error Fallback', () => {
+    it('should hide image and show initials fallback when image errors', async () => {
+      const banksWithIcon = [
+        { id: 'nz_anz', name: 'ANZ', logo: '🏦', country: 'NZ' },
+      ];
+      mockGetAvailableBanks.mockResolvedValue(banksWithIcon);
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      const img = document.querySelector('.cb-tile-logo-img') as HTMLImageElement;
+      if (img) {
+        fireEvent.error(img);
+        // After error the img should no longer be present
+        await waitFor(() => {
+          expect(document.querySelector('.cb-tile-logo-img')).not.toBeInTheDocument();
+        });
+      }
+    });
+  });
+
+  describe('getMeta fallback', () => {
+    it('should use initials fallback for unknown bank id', async () => {
+      const unknownBanks = [
+        { id: 'xx_unknown_bank', name: 'Unknown Bank', logo: '🏦', country: 'NZ' },
+      ];
+      mockGetAvailableBanks.mockResolvedValue(unknownBanks);
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('Unknown Bank')).toBeInTheDocument();
+      });
+
+      const tile = screen.getByText('Unknown Bank').closest('[tabindex="0"]')!;
+      const logo = tile.querySelector('[data-initials]') as HTMLElement;
+      // The fallback initials are the last 3 chars uppercased: 'ANK'
+      expect(logo?.getAttribute('data-initials')).toBe('ANK');
+    });
+  });
+
+  describe('Search filtering', () => {
+    it('should show empty message when search yields no results', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/search banks/i)).toBeInTheDocument();
+      });
+
+      fireEvent.change(screen.getByLabelText(/search banks/i), {
+        target: { value: 'zzz_no_match_zzz' },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/no banks available/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should show matching bank after partial search', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/search banks/i)).toBeInTheDocument();
+      });
+
+      fireEvent.change(screen.getByLabelText(/search banks/i), {
+        target: { value: 'ANZ' },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+        expect(screen.queryByText('ASB')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Confirmation panel image error fallback', () => {
+    it('should handle image error in confirmation panel logo', async () => {
+      const banksWithIcon = [
+        { id: 'nz_anz', name: 'ANZ', logo: '🏦', country: 'NZ' },
+      ];
+      mockGetAvailableBanks.mockResolvedValue(banksWithIcon);
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      // Select the bank to show confirmation panel
+      fireEvent.click(screen.getByText('ANZ').closest('[tabindex="0"]')!);
+
+      await waitFor(() => {
+        expect(screen.getByText(/ready to link anz/i)).toBeInTheDocument();
+      });
+
+      // Fire error on the confirmation panel img if present
+      const imgs = document.querySelectorAll('.cb-confirmation-logo .cb-tile-logo-img');
+      if (imgs.length > 0) {
+        fireEvent.error(imgs[0]);
+        await waitFor(() => {
+          const remainingImgs = document.querySelectorAll('.cb-confirmation-logo .cb-tile-logo-img');
+          expect(remainingImgs.length).toBe(0);
+        });
+      }
+    });
+  });
+
+  describe('Country change resets state', () => {
+    it('should clear selected bank and search query when country changes', async () => {
+      renderConnectBank();
+
+      await waitFor(() => {
+        expect(screen.getByText('ANZ')).toBeInTheDocument();
+      });
+
+      // Select a bank
+      fireEvent.click(screen.getByText('ANZ').closest('[tabindex="0"]')!);
+      await waitFor(() => {
+        expect(screen.getByText(/ready to link anz/i)).toBeInTheDocument();
+      });
+
+      // Change country — should reset selectedBank and searchQuery
+      const countrySelect = screen.getByLabelText(/select country/i);
+      fireEvent.change(countrySelect, { target: { value: 'AU' } });
+
+      await waitFor(() => {
+        expect(screen.queryByText(/ready to link anz/i)).not.toBeInTheDocument();
+      });
+    });
+  });
 });

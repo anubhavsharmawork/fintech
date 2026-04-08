@@ -48,8 +48,8 @@ describe('TransactionStatus Component', () => {
       />
     );
 
-    expect(screen.getByText('Waiting for Confirmation...')).toBeInTheDocument();
-    expect(screen.getByText('⏳')).toBeInTheDocument();
+    expect(screen.getByText('Processing')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /Processing/i })).toBeInTheDocument();
     // Check for shortened hash
     expect(screen.getByText(/0x12345678...abcdef12/)).toBeInTheDocument();
   });
@@ -75,10 +75,10 @@ describe('TransactionStatus Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Transaction Confirmed!')).toBeInTheDocument();
+      expect(screen.getByText('Completed')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('✅')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /Completed/i })).toBeInTheDocument();
     expect(screen.getByText('Gas Used:')).toBeInTheDocument();
     expect(screen.getByText('21000')).toBeInTheDocument();
     expect(onConfirmedMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -106,10 +106,10 @@ describe('TransactionStatus Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Transaction Failed')).toBeInTheDocument();
+      expect(screen.getByText('Flagged')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('❌')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /Flagged/i })).toBeInTheDocument();
     expect(screen.getByText('Transaction reverted on-chain')).toBeInTheDocument();
     expect(onFailedMock).toHaveBeenCalledWith('Transaction reverted');
   });
@@ -128,7 +128,7 @@ describe('TransactionStatus Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Transaction Failed')).toBeInTheDocument();
+      expect(screen.getByText('Flagged')).toBeInTheDocument();
     });
 
     expect(onFailedMock).toHaveBeenCalledWith('Network Error');
@@ -241,7 +241,7 @@ describe('TransactionStatus Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/This transaction is now permanently recorded/)).toBeInTheDocument();
+      expect(screen.getByText(/Transaction recorded on Sepolia/)).toBeInTheDocument();
     });
   });
 
@@ -256,7 +256,7 @@ describe('TransactionStatus Component', () => {
     );
 
     const card = container.querySelector('.card');
-    expect(card).toHaveStyle({ borderLeft: expect.stringContaining('#f59e0b') });
+    expect(card).toHaveStyle({ borderLeft: expect.stringContaining('#2563eb') });
   });
 
   it('applies correct styling for confirmed status', async () => {
@@ -276,7 +276,7 @@ describe('TransactionStatus Component', () => {
 
     await waitFor(() => {
       const card = container.querySelector('.card');
-      expect(card).toHaveStyle({ borderLeft: expect.stringContaining('#22c55e') });
+      expect(card).toHaveStyle({ borderLeft: expect.stringContaining('#059669') });
     });
   });
 
@@ -292,7 +292,7 @@ describe('TransactionStatus Component', () => {
 
     await waitFor(() => {
       const card = container.querySelector('.card');
-      expect(card).toHaveStyle({ borderLeft: expect.stringContaining('#ef4444') });
+      expect(card).toHaveStyle({ borderLeft: expect.stringContaining('#dc2626') });
     });
   });
 
@@ -389,7 +389,7 @@ describe('TransactionStatus Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Transaction Failed')).toBeInTheDocument();
+      expect(screen.getByText('Flagged')).toBeInTheDocument();
       expect(screen.getByText(/Failed to confirm transaction/)).toBeInTheDocument();
     });
   });

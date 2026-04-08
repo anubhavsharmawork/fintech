@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { ToastProvider, useToast, Toast, ToastType } from './Toast';
 
 describe('Toast Component', () => {
@@ -179,7 +179,6 @@ describe('Toast Component', () => {
 
       const closeBtn = screen.getByLabelText('Dismiss');
       expect(closeBtn).toBeInTheDocument();
-      expect(closeBtn).toHaveTextContent('x');
     });
   });
 
@@ -318,7 +317,7 @@ describe('Toast Component', () => {
       fireEvent.click(screen.getByText('Trigger'));
       expect(screen.getByText('Success')).toBeInTheDocument();
 
-      jest.advanceTimersByTime(3200);
+      act(() => { jest.advanceTimersByTime(4500); })
 
       expect(screen.queryByText('Success')).not.toBeInTheDocument();
     });
@@ -339,22 +338,22 @@ describe('Toast Component', () => {
       const firstMessage = screen.getByText('Message');
       expect(firstMessage).toBeInTheDocument();
 
-      jest.advanceTimersByTime(1000);
+      act(() => { jest.advanceTimersByTime(1000); });
 
       fireEvent.click(screen.getByText('Trigger'));
       const toasts = screen.getAllByText('Message');
       expect(toasts).toHaveLength(2);
 
-      jest.advanceTimersByTime(2200);
+      act(() => { jest.advanceTimersByTime(3500); });
       expect(screen.queryAllByText('Message')).toHaveLength(1);
 
-      jest.advanceTimersByTime(1000);
+      act(() => { jest.advanceTimersByTime(1500); });
       expect(screen.queryByText('Message')).not.toBeInTheDocument();
     });
   });
 
   describe('Toast Dismissal', () => {
-    it('should dismiss toast when close button clicked', () => {
+    it('should dismiss toast when close button clicked', async () => {
       const TestComponent = () => {
         const { success } = useToast();
         return <button onClick={() => success('Success')}>Trigger</button>;
@@ -372,10 +371,12 @@ describe('Toast Component', () => {
       const closeBtn = screen.getByLabelText('Dismiss');
       fireEvent.click(closeBtn);
 
-      expect(screen.queryByText('Success')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Success')).not.toBeInTheDocument();
+      });
     });
 
-    it('should dismiss only clicked toast', () => {
+    it('should dismiss only clicked toast', async () => {
       const TestComponent = () => {
         const { success, error } = useToast();
         return (
@@ -401,7 +402,9 @@ describe('Toast Component', () => {
       const closeButtons = screen.getAllByLabelText('Dismiss');
       fireEvent.click(closeButtons[0]); // Close first toast
 
-      expect(screen.queryByText('Success 1')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Success 1')).not.toBeInTheDocument();
+      });
       expect(screen.getByText('Error 1')).toBeInTheDocument();
     });
   });
@@ -476,8 +479,8 @@ describe('Toast Component', () => {
 
       fireEvent.click(screen.getByText('Trigger'));
 
-      const dot = document.querySelector('.toast-dot');
-      expect(dot).toHaveAttribute('aria-hidden', 'true');
+      const icon = document.querySelector('.toast-icon');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
     });
 
     it('should announce toasts to screen readers', () => {
@@ -591,6 +594,333 @@ describe('Toast Component', () => {
       fireEvent.click(screen.getByText('Trigger'));
 
       expect(screen.getByText(specialMessage)).toBeInTheDocument();
+    });
+  });
+
+  describe('Warning Toast', () => {
+    it('should display warning toast message', () => {
+      const TestComponent = () => {
+        const { warning } = useToast();
+        return <button onClick={() => warning('Low balance warning')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      expect(screen.getByText('Low balance warning')).toBeInTheDocument();
+    });
+
+    it('should apply warning class', () => {
+      const TestComponent = () => {
+        const { warning } = useToast();
+        return <button onClick={() => warning('Warning')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      expect(document.querySelector('.toast-warning')).toBeInTheDocument();
+    });
+
+    it('should have alert role for warning', () => {
+      const TestComponent = () => {
+        const { warning } = useToast();
+        return <button onClick={() => warning('Warning')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      const toastEl = document.querySelector('.toast-warning');
+      expect(toastEl).toHaveAttribute('role', 'alert');
+    });
+
+    it('should render action button when action is provided', () => {
+      const actionFn = jest.fn();
+      const TestComponent = () => {
+        const { warning } = useToast();
+        return (
+          <button onClick={() => warning('Please renew', { label: 'Renew Now', onClick: actionFn })}>
+            Trigger
+          </button>
+        );
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      const actionBtn = screen.getByText('Renew Now');
+      expect(actionBtn).toBeInTheDocument();
+    });
+
+    it('should call action onClick and dismiss when action button clicked', async () => {
+      const actionFn = jest.fn();
+      const TestComponent = () => {
+        const { warning } = useToast();
+        return (
+          <button onClick={() => warning('Please renew', { label: 'Renew Now', onClick: actionFn })}>
+            Trigger
+          </button>
+        );
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+      fireEvent.click(screen.getByText('Renew Now'));
+
+      expect(actionFn).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(screen.queryByText('Please renew')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should auto-dismiss warning after 8000ms', () => {
+      jest.useFakeTimers();
+      const TestComponent = () => {
+        const { warning } = useToast();
+        return <button onClick={() => warning('Warning message')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+      expect(screen.getByText('Warning message')).toBeInTheDocument();
+
+      act(() => { jest.advanceTimersByTime(8300); });
+      expect(screen.queryByText('Warning message')).not.toBeInTheDocument();
+
+      act(() => { jest.runOnlyPendingTimers(); });
+      jest.useRealTimers();
+    });
+  });
+
+  describe('Critical Toast', () => {
+    it('should display critical banner message', () => {
+      const TestComponent = () => {
+        const { critical } = useToast();
+        return <button onClick={() => critical('Security alert!')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      expect(screen.getByText('Security alert!')).toBeInTheDocument();
+    });
+
+    it('should render critical banner with alert role', () => {
+      const TestComponent = () => {
+        const { critical } = useToast();
+        return <button onClick={() => critical('Critical issue')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      const banner = document.querySelector('.toast-critical-banner');
+      expect(banner).toBeInTheDocument();
+      expect(banner).toHaveAttribute('role', 'alert');
+    });
+
+    it('should show Dismiss button on critical banner', () => {
+      const TestComponent = () => {
+        const { critical } = useToast();
+        return <button onClick={() => critical('Critical issue')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      expect(screen.getByText('Dismiss')).toBeInTheDocument();
+    });
+
+    it('should dismiss critical banner when Dismiss clicked', () => {
+      const TestComponent = () => {
+        const { critical } = useToast();
+        return <button onClick={() => critical('Critical issue')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+      expect(screen.getByText('Critical issue')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Dismiss'));
+      expect(screen.queryByText('Critical issue')).not.toBeInTheDocument();
+    });
+
+    it('should not auto-dismiss critical banners', () => {
+      jest.useFakeTimers();
+      const TestComponent = () => {
+        const { critical } = useToast();
+        return <button onClick={() => critical('Critical remains')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+      act(() => { jest.advanceTimersByTime(30000); });
+
+      expect(screen.getByText('Critical remains')).toBeInTheDocument();
+
+      act(() => { jest.runOnlyPendingTimers(); });
+      jest.useRealTimers();
+    });
+
+    it('should display only first critical in queue', () => {
+      const TestComponent = () => {
+        const { critical } = useToast();
+        return (
+          <>
+            <button onClick={() => critical('First critical')}>First</button>
+            <button onClick={() => critical('Second critical')}>Second</button>
+          </>
+        );
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('First'));
+      fireEvent.click(screen.getByText('Second'));
+
+      expect(screen.getByText('First critical')).toBeInTheDocument();
+      expect(screen.queryByText('Second critical')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('MAX_VISIBLE cap', () => {
+    it('should cap visible toasts at 4 by evicting oldest dismissible', () => {
+      const TestComponent = () => {
+        const { success } = useToast();
+        return (
+          <>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} onClick={() => success(`Toast ${n}`)}>Trigger {n}</button>
+            ))}
+          </>
+        );
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      // Fire 5 success toasts — MAX_VISIBLE is 4 so the first is evicted
+      fireEvent.click(screen.getByText('Trigger 1'));
+      fireEvent.click(screen.getByText('Trigger 2'));
+      fireEvent.click(screen.getByText('Trigger 3'));
+      fireEvent.click(screen.getByText('Trigger 4'));
+      fireEvent.click(screen.getByText('Trigger 5'));
+
+      // Only 4 toasts should be visible at most
+      const toasts = document.querySelectorAll('.toast');
+      expect(toasts.length).toBeLessThanOrEqual(4);
+    });
+
+    it('should not evict persistent (error/critical) toasts when capping', () => {
+      const TestComponent = () => {
+        const { error, success } = useToast();
+        return (
+          <>
+            <button onClick={() => error('Persistent error')}>Error</button>
+            <button onClick={() => success('S1')}>S1</button>
+            <button onClick={() => success('S2')}>S2</button>
+            <button onClick={() => success('S3')}>S3</button>
+            <button onClick={() => success('S4')}>S4</button>
+          </>
+        );
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Error'));
+      fireEvent.click(screen.getByText('S1'));
+      fireEvent.click(screen.getByText('S2'));
+      fireEvent.click(screen.getByText('S3'));
+      fireEvent.click(screen.getByText('S4'));
+
+      // Error toast should still be present (it persists)
+      expect(screen.getByText('Persistent error')).toBeInTheDocument();
+    });
+  });
+
+  describe('Error Toast support text', () => {
+    it('should show Contact support text for error toasts', () => {
+      const TestComponent = () => {
+        const { error } = useToast();
+        return <button onClick={() => error('Something failed')}>Trigger</button>;
+      };
+
+      render(
+        <ToastProvider>
+          <TestComponent />
+        </ToastProvider>
+      );
+
+      fireEvent.click(screen.getByText('Trigger'));
+
+      expect(screen.getByText('Contact support')).toBeInTheDocument();
     });
   });
 });

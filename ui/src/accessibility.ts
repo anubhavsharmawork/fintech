@@ -12,6 +12,7 @@ export const announceToScreenReader = (message: string, priority: 'polite' | 'as
   announcement.setAttribute('role', 'status');
   announcement.setAttribute('aria-live', priority);
   announcement.setAttribute('aria-atomic', 'true');
+  announcement.setAttribute('data-priority', priority);
   announcement.style.position = 'absolute';
   announcement.style.left = '-10000px';
   announcement.style.width = '1px';

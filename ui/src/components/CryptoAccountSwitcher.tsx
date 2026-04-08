@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Coins, AlertTriangle, Eye, Loader, RefreshCw, Wallet } from 'lucide-react';
 import { getETHBalance, getFTKBalance, getTokenInfo, getEtherscanAddressUrl, getEtherscanTokenUrl, isValidAddress, DEMO_WALLET } from '../services/crypto';
 
 interface Props {
@@ -76,11 +77,11 @@ const CryptoAccountSwitcher: React.FC<Props> = ({ address, demoAddress, showToke
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontWeight: 600, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>💰</span>
+            <span><Coins size={20} color="currentColor" /></span>
             Crypto Balances
           </div>
           {lastUpdated && (
-            <span className="small" style={{ color: '#888' }}>
+            <span className="small" style={{ color: '#6b7280' }}>
               Updated: {lastUpdated.toLocaleTimeString()}
             </span>
           )}
@@ -98,7 +99,7 @@ const CryptoAccountSwitcher: React.FC<Props> = ({ address, demoAddress, showToke
             }}>
               <span className="small" style={{ color: '#666' }}>Wallet:</span>
               {isDemo ? (
-                <span style={{ fontFamily: 'monospace', color: '#d97706', fontSize: '0.85rem' }}>
+                <span style={{ fontFamily: 'monospace', color: '#92400e', fontSize: '0.85rem' }}>
                   {shortenAddress(effectiveAddress)} (Demo)
                 </span>
               ) : (
@@ -114,8 +115,8 @@ const CryptoAccountSwitcher: React.FC<Props> = ({ address, demoAddress, showToke
             </div>
 
             {error && (
-              <div style={{ color: '#ef4444', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 4, fontSize: '0.85rem' }}>
-                ⚠️ {error}
+              <div style={{ color: '#991b1b', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 4, fontSize: '0.85rem' }}>
+                <AlertTriangle size={14} color="currentColor" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> {error}
               </div>
             )}
 
@@ -133,7 +134,7 @@ const CryptoAccountSwitcher: React.FC<Props> = ({ address, demoAddress, showToke
                 <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)', marginTop: 4 }}>
                   {loading ? '...' : formatBalance(ethBalance)}
                 </div>
-                <div className="small" style={{ color: '#888', marginTop: 4 }}>
+                <div className="small" style={{ color: '#6b7280', marginTop: 4 }}>
                   For gas fees
                 </div>
               </div>
@@ -148,7 +149,7 @@ const CryptoAccountSwitcher: React.FC<Props> = ({ address, demoAddress, showToke
                 <div style={{ fontSize: '0.75rem', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   {tokenName} Token
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#22c55e', marginTop: 4 }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#059669', marginTop: 4 }}>
                   {loading ? '...' : formatBalance(ftkBalance, 2)}
                 </div>
                 {showTokenLink && (
@@ -172,18 +173,18 @@ const CryptoAccountSwitcher: React.FC<Props> = ({ address, demoAddress, showToke
               disabled={loading || isDemo}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
             >
-              {isDemo ? '👁️ Demo Data' : loading ? '⏳ Refreshing…' : '🔄 Refresh Balances'}
+              {isDemo ? <><Eye size={16} color="currentColor" /> Demo Data</> : loading ? <><Loader size={16} color="currentColor" /> Refreshing…</> : <><RefreshCw size={16} color="currentColor" /> Refresh Balances</>}
             </button>
 
-            <div className="small" style={{ color: '#888', textAlign: 'center' }}>
+            <div className="small" style={{ color: '#6b7280', textAlign: 'center' }}>
               {isDemo 
                 ? 'Sample balances shown for demonstration purposes' 
                 : 'Balances are fetched directly from Sepolia blockchain via RPC'}
             </div>
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: 16, color: '#888' }}>
-            <div style={{ fontSize: '2rem', marginBottom: 8 }}>👛</div>
+          <div style={{ textAlign: 'center', padding: 16, color: '#6b7280' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Wallet size={32} color="currentColor" /></div>
             Connect your wallet to view real-time balances
           </div>
         )}

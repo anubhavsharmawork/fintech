@@ -120,20 +120,22 @@ textarea:focus-visible {
 
 .btn-primary {
   background-color: #0d6efd;
-  color: #fff;
+  color: #fff !important;
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: #0a58ca;
+  color: #fff !important;
 }
 
 .btn-secondary {
   background-color: #6c757d;
-  color: #fff;
+  color: #fff !important;
 }
 
 .btn-secondary:hover:not(:disabled) {
   background-color: #5c636a;
+  color: #fff !important;
 }
 
 /* Ensure text is readable */
@@ -350,19 +352,19 @@ nav[aria-label="Breadcrumb"] li:last-child::after {
 /* Balance Card Styles */
 .balance-card {
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
   color: #fff;
   padding: 32px 28px;
   border-radius: 12px;
   margin-bottom: 24px;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 30px rgba(30, 41, 59, 0.3);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .balance-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 14px 40px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 14px 40px rgba(30, 41, 59, 0.4);
 }
 
 .balance-card:focus-within {
@@ -381,8 +383,11 @@ nav[aria-label="Breadcrumb"] li:last-child::after {
 }
 
 .balance-card [role="status"] {
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  background: rgba(255, 255, 255, 0.15);
   padding: 8px 16px;
   border-radius: 24px;
   font-size: 13px;

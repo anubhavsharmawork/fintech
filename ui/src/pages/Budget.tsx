@@ -1,7 +1,23 @@
 import * as React from 'react';
+import { Home, TrendingUp, Sparkles } from 'lucide-react';
 import { authFetch } from '../auth';
 import { useToast } from '../components/Toast';
 import { useFMode } from '../hooks/useFMode';
+import { API } from '../config/constants';
+import ChartShell from '../components/charts/ChartShell';
+import { CHART_COLORS, CHART_DEFAULTS, percentFormatter, currencyFormatter } from '../components/charts/chartTheme';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface BudgetAggregationDto {
   fun: number;
@@ -88,10 +104,7 @@ const Budget = () => {
   const [accountId, setAccountId] = React.useState<string>('');
   
   // Persist budget preferences in localStorage
-  const [step, setStep] = React.useState<BudgetStep>(() => {
-    const saved = localStorage.getItem('budgetStep');
-    return (saved === 'goal' || saved === 'income' || saved === 'view') ? saved : 'goal';
-  });
+  const [step, setStep] = React.useState<BudgetStep>('goal');
   
   const [selectedGoal, setSelectedGoal] = React.useState<string>(() => {
     return localStorage.getItem('budgetGoal') || 'balanced';
@@ -117,28 +130,51 @@ const Budget = () => {
     const saved = localStorage.getItem('budgetCustomFun');
     return saved ? parseInt(saved) : 25;
   });
+  const hasHydrated = React.useRef(false);
 
   // Save to localStorage whenever these values change
   React.useEffect(() => {
+    if (!hasHydrated.current) return;
     localStorage.setItem('budgetStep', step);
   }, [step]);
 
   React.useEffect(() => {
+    if (!hasHydrated.current) return;
     localStorage.setItem('budgetGoal', selectedGoal);
   }, [selectedGoal]);
 
   React.useEffect(() => {
+    if (!hasHydrated.current) return;
     localStorage.setItem('budgetIncome', monthlyIncome);
   }, [monthlyIncome]);
 
   React.useEffect(() => {
+    if (!hasHydrated.current) return;
     localStorage.setItem('budgetCustomFixed', customFixed.toString());
     localStorage.setItem('budgetCustomFuture', customFuture.toString());
     localStorage.setItem('budgetCustomFun', customFun.toString());
   }, [customFixed, customFuture, customFun]);
 
+  React.useEffect(() => {
+    const savedStep = localStorage.getItem('budgetStep');
+    if (savedStep === 'goal' || savedStep === 'income' || savedStep === 'view') {
+      setStep(savedStep);
+    }
+
+    const savedGoal = localStorage.getItem('budgetGoal');
+    if (savedGoal) {
+      setSelectedGoal(savedGoal);
+    }
+
+    const savedIncome = localStorage.getItem('budgetIncome');
+    if (savedIncome !== null) {
+      setMonthlyIncome(savedIncome);
+    }
+    hasHydrated.current = true;
+  }, []);
+
   const fetchAccounts = React.useCallback(async () => {
-    const res = await authFetch('/accounts');
+    const res = await authFetch(API.ACCOUNTS);
     if (!res.ok) return;
     const data: Account[] = await res.json();
     setAccounts(data);
@@ -154,7 +190,7 @@ const Budget = () => {
         from: new Date(from).toISOString(),
         to: new Date(to).toISOString()
       });
-      const res = await authFetch(`/budget/budget?${params.toString()}`);
+      const res = await authFetch(`${API.BUDGET}?${params.toString()}`);
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `Failed to load budget (${res.status})`);
@@ -286,7 +322,7 @@ const Budget = () => {
                       padding: '2px 8px',
                       borderRadius: '999px',
                       background: goal.badge === 'Default' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                      color: goal.badge === 'Default' ? 'var(--primary)' : '#059669',
+                      color: goal.badge === 'Default' ? 'var(--primary)' : '#047857',
                       fontWeight: 600,
                     }}
                   >
@@ -304,7 +340,7 @@ const Budget = () => {
                       fontWeight: 500,
                     }}
                   >
-                    {goal.riskLabel}
+                    {goal.riskLabel === 'Low-Medium Risk' ? 'Low–Medium Risk' : goal.riskLabel}
                   </span>
                 )}
               </div>
@@ -312,9 +348,9 @@ const Budget = () => {
                 {goal.description}
               </p>
               <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', fontWeight: 500 }}>
-                <span style={{ color: '#f97316' }}>🏠 {goal.fixed}% Fixed</span>
-                <span style={{ color: '#22c55e' }}>📈 {goal.future}% Future</span>
-                <span style={{ color: '#3b82f6' }}>✨ {goal.fun}% Fun</span>
+                <span style={{ color: '#c2410c', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Home size={14} color="currentColor" /> {goal.fixed}% Fixed</span>
+                <span style={{ color: '#047857', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><TrendingUp size={14} color="currentColor" /> {goal.future}% Future</span>
+                <span style={{ color: '#1d4ed8', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Sparkles size={14} color="currentColor" /> {goal.fun}% Fun</span>
               </div>
             </div>
           </button>
@@ -327,7 +363,7 @@ const Budget = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
-                <span>🏠 Fixed Expenses</span>
+                <span><Home size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Fixed Expenses</span>
                 <span style={{ fontWeight: 600 }}>{customFixed}%</span>
               </label>
               <input
@@ -335,13 +371,14 @@ const Budget = () => {
                 min="30"
                 max="80"
                 value={customFixed}
+                  aria-label="Fixed allocation"
                 onChange={(e) => handleCustomSliderChange('fixed', parseInt(e.target.value))}
                 style={{ width: '100%', accentColor: '#f97316' }}
               />
             </div>
             <div>
               <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
-                <span>📈 Future Savings</span>
+                <span><TrendingUp size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Future Savings</span>
                 <span style={{ fontWeight: 600 }}>{customFuture}%</span>
               </label>
               <input
@@ -349,13 +386,14 @@ const Budget = () => {
                 min="5"
                 max="50"
                 value={customFuture}
+                  aria-label="Future allocation"
                 onChange={(e) => handleCustomSliderChange('future', parseInt(e.target.value))}
                 style={{ width: '100%', accentColor: '#22c55e' }}
               />
             </div>
             <div>
               <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
-                <span>✨ Fun Money</span>
+                <span><Sparkles size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Fun Money</span>
                 <span style={{ fontWeight: 600 }}>{customFun}%</span>
               </label>
               <input
@@ -363,6 +401,7 @@ const Budget = () => {
                 min="5"
                 max="40"
                 value={customFun}
+                  aria-label="Fun allocation"
                 onChange={(e) => handleCustomSliderChange('fun', parseInt(e.target.value))}
                 style={{ width: '100%', accentColor: '#3b82f6' }}
               />
@@ -399,10 +438,11 @@ const Budget = () => {
         </p>
 
         <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-          <label htmlFor="income">Monthly Take-Home Income ($)</label>
+          <label htmlFor="income">Monthly Income ($)</label>
           <input
             id="income"
             type="number"
+            aria-label="Monthly Income"
             placeholder="e.g., 5000"
             value={monthlyIncome}
             onChange={(e) => setMonthlyIncome(e.target.value)}
@@ -416,16 +456,16 @@ const Budget = () => {
             <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Your Budget Breakdown</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(249, 115, 22, 0.1)', borderRadius: '8px' }}>
-                <span>🏠 Fixed Expenses ({activeFixed}%)</span>
-                <span style={{ fontWeight: 600, color: '#f97316' }}>${(income * activeFixed / 100).toFixed(2)}</span>
+                <span><Home size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Fixed Expenses ({activeFixed}%)</span>
+                <span style={{ fontWeight: 600, color: '#9a3412' }}>${(income * activeFixed / 100).toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px' }}>
-                <span>📈 Future Savings ({activeFuture}%)</span>
-                <span style={{ fontWeight: 600, color: '#22c55e' }}>${(income * activeFuture / 100).toFixed(2)}</span>
+                <span><TrendingUp size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Future Savings ({activeFuture}%)</span>
+                <span style={{ fontWeight: 600, color: '#065f46' }}>${(income * activeFuture / 100).toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px' }}>
-                <span>✨ Fun Money ({activeFun}%)</span>
-                <span style={{ fontWeight: 600, color: '#3b82f6' }}>${(income * activeFun / 100).toFixed(2)}</span>
+                <span><Sparkles size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Fun Money ({activeFun}%)</span>
+                <span style={{ fontWeight: 600, color: '#1e40af' }}>${(income * activeFun / 100).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -433,7 +473,7 @@ const Budget = () => {
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <button className="btn" style={{ background: '#e5e7eb', color: '#374151' }} onClick={() => setStep('goal')}>
-            ← Back to Goals
+            Back to Goals
           </button>
           <button className="btn btn-primary" onClick={handleIncomeSubmit} disabled={!monthlyIncome}>
             Create Budget Plan →
@@ -460,6 +500,8 @@ const Budget = () => {
             </button>
           </div>
 
+          <h3 style={{ marginTop: 0 }}>Spending Breakdown</h3>
+
           <div style={{ padding: '12px 16px', background: 'rgba(37, 99, 235, 0.05)', borderRadius: '10px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 600 }}>Current Goal: {currentGoal.name}</span>
             <span className="small">
@@ -474,7 +516,7 @@ const Budget = () => {
 
           {fModeEnabled ? (
             <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📈</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', color: 'var(--muted, #6b7280)' }}><TrendingUp size={48} color="currentColor" /></div>
               <p>Budgeting is currently focused on Fiat accounts.</p>
               <p className="small">Switch to Fiat mode to view your conscious spending breakdown.</p>
             </div>
@@ -495,11 +537,11 @@ const Budget = () => {
                 </div>
                 <div className="form-group">
                   <label htmlFor="from">From</label>
-                  <input id="from" type="date" value={from} onChange={e => setFrom((e.target as HTMLInputElement).value)} />
+                  <input id="from" type="date" role="textbox" value={from} onChange={e => setFrom((e.target as HTMLInputElement).value)} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="to">To</label>
-                  <input id="to" type="date" value={to} onChange={e => setTo((e.target as HTMLInputElement).value)} />
+                  <input id="to" type="date" role="textbox" value={to} onChange={e => setTo((e.target as HTMLInputElement).value)} />
                 </div>
                 <div className="form-group" style={{ alignSelf: 'flex-end' }}>
                   <button className="btn btn-primary" type="button" onClick={loadBudget} disabled={loading || !accountId}>
@@ -529,6 +571,122 @@ const Budget = () => {
                   </div>
                 </div>
               )}
+
+              {/* Budget Utilisation Charts */}
+              {budget && total > 0 && (() => {
+                const income = parseFloat(monthlyIncome) || 0;
+                const categories = [
+                  { name: 'Fun', value: budget.fun, allocated: income > 0 ? income * activeFun / 100 : budget.fun, color: CHART_COLORS.primary },
+                  { name: 'Fixed', value: budget.fixed, allocated: income > 0 ? income * activeFixed / 100 : budget.fixed, color: CHART_COLORS.accent },
+                  { name: 'Future', value: budget.future, allocated: income > 0 ? income * activeFuture / 100 : budget.future, color: CHART_COLORS.amber },
+                ];
+                const totalAllocated = categories.reduce((s, c) => s + c.allocated, 0);
+                const pieData = categories.map(c => ({ name: c.name, value: c.allocated, color: c.color }));
+                const barData = categories.map(c => {
+                  const pctUsed = c.allocated > 0 ? Math.min(100, (c.value / c.allocated) * 100) : 0;
+                  return {
+                    name: c.name.length > 12 ? c.name.substring(0, 12) + '…' : c.name,
+                    utilised: pctUsed,
+                    remaining: Math.max(0, 100 - pctUsed),
+                  };
+                });
+
+                return (
+                  <div style={{ marginTop: 24 }}>
+                    <ChartShell title="Budget Utilisation">
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                        {/* Doughnut Chart */}
+                        <div style={{ position: 'relative', height: 280 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={100}
+                                paddingAngle={2}
+                              >
+                                {pieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                contentStyle={{
+                                  background: CHART_DEFAULTS.tooltipBackground,
+                                  border: `1px solid ${CHART_DEFAULTS.tooltipBorderColor}`,
+                                  borderRadius: 6,
+                                  fontSize: CHART_DEFAULTS.tooltipFontSize,
+                                }}
+                                formatter={(value: number) => currencyFormatter(value)}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          {/* Center label */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            textAlign: 'center',
+                            pointerEvents: 'none',
+                          }}>
+                            <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text, #111827)' }}>
+                              {currencyFormatter(totalAllocated)}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--muted, #6b7280)' }}>Allocated</div>
+                          </div>
+                        </div>
+
+                        {/* Horizontal Bar Chart */}
+                        <div style={{ height: 280 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 60, bottom: 10 }}>
+                              <CartesianGrid
+                                stroke={CHART_DEFAULTS.gridStrokeColor}
+                                strokeDasharray={CHART_DEFAULTS.gridStrokeDashArray}
+                                horizontal={false}
+                              />
+                              <XAxis
+                                type="number"
+                                domain={[0, 100]}
+                                tickFormatter={(v: number) => percentFormatter(v)}
+                                tick={{ fontSize: CHART_DEFAULTS.axisTickFontSize, fill: CHART_DEFAULTS.axisTickColor }}
+                                axisLine={false}
+                                tickLine={false}
+                              />
+                              <YAxis
+                                type="category"
+                                dataKey="name"
+                                tick={{ fontSize: CHART_DEFAULTS.axisTickFontSize, fill: CHART_DEFAULTS.axisTickColor }}
+                                axisLine={false}
+                                tickLine={false}
+                                width={55}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  background: CHART_DEFAULTS.tooltipBackground,
+                                  border: `1px solid ${CHART_DEFAULTS.tooltipBorderColor}`,
+                                  borderRadius: 6,
+                                  fontSize: CHART_DEFAULTS.tooltipFontSize,
+                                }}
+                                formatter={(value: number, name: string) => [
+                                  percentFormatter(value),
+                                  name === 'utilised' ? 'Utilised' : 'Remaining'
+                                ]}
+                              />
+                              <Bar dataKey="utilised" stackId="a" fill={CHART_COLORS.accent} radius={[4, 0, 0, 4]} />
+                              <Bar dataKey="remaining" stackId="a" fill="#e5e7eb" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </ChartShell>
+                  </div>
+                );
+              })()}
 
               {!budget && !loading && (
                 <p>No budget data.</p>

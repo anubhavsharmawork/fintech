@@ -133,7 +133,7 @@ describe('Accounts Page', () => {
       renderAccounts();
 
       await waitFor(() => {
-        expect(screen.getByText('No accounts yet.')).toBeInTheDocument();
+        expect(screen.getByText(/No internal accounts yet/)).toBeInTheDocument();
       });
     });
 
@@ -209,7 +209,7 @@ describe('Accounts Page', () => {
       renderAccounts();
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Create Account' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Create Internal Account' })).toBeInTheDocument();
       });
     });
 
@@ -223,11 +223,11 @@ describe('Accounts Page', () => {
       });
     });
 
-    it('should have initial deposit input field', async () => {
+    it('should not have initial deposit input field', async () => {
       renderAccounts();
 
       await waitFor(() => {
-        expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+        expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
       });
     });
 
@@ -246,9 +246,6 @@ describe('Accounts Page', () => {
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Add New Account' })).toBeInTheDocument();
       });
-
-      const depositInput = screen.getByRole('spinbutton');
-      fireEvent.change(depositInput, { target: { value: '100' } });
 
       const submitButton = screen.getByRole('button', { name: 'Add New Account' });
       fireEvent.click(submitButton);
@@ -342,7 +339,7 @@ describe('Accounts Page', () => {
     it('should not show create account form when fMode enabled', () => {
       renderAccounts();
 
-      expect(screen.queryByRole('heading', { name: 'Create Account' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Create Internal Account' })).not.toBeInTheDocument();
     });
 
     it('should not show account list when fMode enabled', () => {
@@ -380,7 +377,7 @@ describe('Accounts Page', () => {
       renderAccounts();
 
       await waitFor(() => {
-        expect(screen.getByText('No accounts yet.')).toBeInTheDocument();
+        expect(screen.getByText(/No internal accounts yet/)).toBeInTheDocument();
       });
 
       expect(screen.queryByRole('region', { name: 'Total Balance Overview' })).not.toBeInTheDocument();

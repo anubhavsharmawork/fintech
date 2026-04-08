@@ -1,99 +1,114 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
-using AccountService.Data;
+using AccountService.Filters;
+using AccountService.Services;
+using Contracts;
 
 namespace AccountService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AccountsController : ControllerBase
+public class AccountsController : FintechControllerBase
 {
-    private readonly AccountDbContext _context;
-    private readonly ILogger<AccountsController> _logger;
+    private readonly IAccountService _accountService;
 
-    public AccountsController(AccountDbContext context, ILogger<AccountsController> logger)
+    public AccountsController(IAccountService accountService)
     {
-        _context = context;
-        _logger = logger;
+        _accountService = accountService;
     }
 
     [HttpGet]
     [Authorize]
+    [ETagFilter]
     public async Task<IActionResult> GetAccounts()
     {
-        var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        try
+        {
+            var result = await _accountService.GetAccountsAsync(CurrentUserId);
+            return Ok(result);
+        }
+        catch (MissingClaimUnauthorizedException)
+        {
             return Unauthorized();
+        }
+    }
 
-        var accounts = await _context.Accounts
-            .Where(a => a.UserId == userId)
-            .ToListAsync();
+    /// <summary>
+    /// Returns all accounts for a given organisation (corporate cash-position aggregation).
+    /// </summary>
+    [HttpGet("organisation/{organisationId}")]
+    [Authorize]
+    [ETagFilter]
+    public async Task<IActionResult> GetOrganisationAccounts(Guid organisationId)
+    {
+        try
+        {
+            if (CurrentOrganisationId != organisationId)
+                return Forbid();
 
-        return Ok(accounts.Select(a => new {
-            id = a.Id,
-            accountNumber = a.AccountNumber,
-            accountType = a.AccountType,
-            balance = a.Balance,
-            currency = a.Currency,
-            createdAt = a.CreatedAt
-        }));
+            var result = await _accountService.GetOrganisationAccountsAsync(organisationId);
+            return Ok(result);
+        }
+        catch (MissingClaimUnauthorizedException)
+        {
+            return Unauthorized();
+        }
     }
 
     [HttpPost]
     [Authorize]
+    [IdempotencyFilter]
     public async Task<IActionResult> CreateAccount([FromBody] CreateAccountRequest request)
     {
-        var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
-            return Unauthorized();
-
-        var account = new Account
+        try
         {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            AccountNumber = GenerateAccountNumber(),
-            AccountType = request.AccountType,
-            Balance = 0,
-            Currency = string.IsNullOrWhiteSpace(request.Currency) ? "USD" : request.Currency,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            var clientType = User.FindFirst("client_type")?.Value ?? "Individual";
+            Guid? organisationId = Guid.TryParse(User.FindFirst("organisation_id")?.Value, out var orgId) ? orgId : null;
 
-        _context.Accounts.Add(account);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Account created: {AccountId} for user {UserId}", account.Id, userId);
-
-        return Ok(new {
-            id = account.Id,
-            accountNumber = account.AccountNumber,
-            accountType = account.AccountType,
-            balance = account.Balance,
-            currency = account.Currency
-        });
+            var result = await _accountService.CreateAccountAsync(CurrentUserId, clientType, organisationId, request);
+            return Ok(result);
+        }
+        catch (MissingClaimUnauthorizedException)
+        {
+            return Unauthorized();
+        }
+        catch (AccountLimitExceededException ex)
+        {
+            return UnprocessableEntity(new { errorCode = ex.ErrorCode, message = ex.Message });
+        }
     }
 
     [HttpGet("{id}/balance")]
     [Authorize]
+    [ETagFilter]
     public async Task<IActionResult> GetBalance(Guid id)
     {
-        var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        try
+        {
+            var result = await _accountService.GetBalanceAsync(CurrentUserId, id);
+            if (result is null)
+                return NotFound();
+
+            return Ok(result);
+        }
+        catch (MissingClaimUnauthorizedException)
+        {
             return Unauthorized();
-
-        var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
-        if (account == null)
-            return NotFound();
-
-        return Ok(new { balance = account.Balance, currency = account.Currency });
-    }
-
-    private static string GenerateAccountNumber()
-    {
-        var random = new Random();
-        return random.Next(1000000000, int.MaxValue).ToString();
+        }
     }
 }
 
 public record CreateAccountRequest(string AccountType, string? Currency);
+
+public record AccountDto(
+    Guid Id,
+    string AccountNumber,
+    string AccountType,
+    decimal Balance,
+    string Currency,
+    DateTime CreatedAt,
+    string? ClientType,
+    Guid? OrganisationId,
+    decimal AvailableBalance,
+    decimal HeldBalance
+);

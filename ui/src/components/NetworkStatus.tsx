@@ -1,14 +1,92 @@
 import * as React from 'react';
 import { getNetworkInfo, switchToSepolia, SEPOLIA_CHAIN_ID, ETHERSCAN_BASE_URL, NetworkInfo } from '../services/crypto';
+import { useToast } from './Toast';
+import { clearAuth } from '../auth';
 
 interface Props {
   onNetworkChange?: (info: NetworkInfo) => void;
+  onRenew?: () => Promise<void> | void;
 }
 
-const NetworkStatus: React.FC<Props> = ({ onNetworkChange }) => {
+const NetworkStatus: React.FC<Props> = ({ onNetworkChange, onRenew }) => {
   const [networkInfo, setNetworkInfo] = React.useState<NetworkInfo | null>(null);
   const [switching, setSwitching] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  /* ─── Session expiry state ─── */
+  const toast = useToast();
+  const [sessionWarning, setSessionWarning] = React.useState<'none' | 'amber' | 'red' | 'expired'>('none');
+  const expiredFiredRef = React.useRef(false);
+  const [sessionDismissed, setSessionDismissed] = React.useState(false);
+
+  const decodeTokenExpiry = React.useCallback((): number | null => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const json = atob(base64);
+      const payload = JSON.parse(json);
+      return typeof payload.exp === 'number' ? payload.exp : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const check = () => {
+      const exp = decodeTokenExpiry();
+      if (!exp) {
+        setSessionWarning('none');
+        return;
+      }
+      const nowSec = Math.floor(Date.now() / 1000);
+      const remaining = exp - nowSec;
+
+      if (remaining <= 0) {
+        setSessionWarning('expired');
+        if (!expiredFiredRef.current) {
+          expiredFiredRef.current = true;
+          toast.critical('Your session has expired. Please log in again.');
+        }
+      } else if (remaining <= 60) {
+        setSessionWarning('red');
+        setSessionDismissed(false);
+      } else if (remaining <= 300) {
+        setSessionWarning('amber');
+      } else {
+        setSessionWarning('none');
+        expiredFiredRef.current = false;
+      }
+    };
+
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, [decodeTokenExpiry, toast]);
+
+  // Reset when token changes (renew / logout)
+  React.useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'token') {
+        setSessionWarning('none');
+        setSessionDismissed(false);
+        expiredFiredRef.current = false;
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const handleRenew = async () => {
+    if (onRenew) {
+      await onRenew();
+      setSessionWarning('none');
+      setSessionDismissed(false);
+      expiredFiredRef.current = false;
+    }
+  };
 
   const checkNetwork = React.useCallback(async () => {
     try {
@@ -50,76 +128,215 @@ const NetworkStatus: React.FC<Props> = ({ onNetworkChange }) => {
     }
   };
 
-  if (!networkInfo) {
+  if (!networkInfo && sessionWarning === 'none') {
     return null;
   }
 
-  const isCorrect = networkInfo.chainId === SEPOLIA_CHAIN_ID;
+  const isCorrect = networkInfo ? networkInfo.chainId === SEPOLIA_CHAIN_ID : false;
+  const showSessionBanner = !sessionDismissed && (sessionWarning === 'amber' || sessionWarning === 'red');
 
   return (
-    <div
-      className="card"
-      style={{
-        marginBottom: 12,
-        padding: '8px 12px',
-        backgroundColor: isCorrect ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-        borderLeft: `4px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: '50%',
-              backgroundColor: isCorrect ? '#22c55e' : '#ef4444',
-              display: 'inline-block',
-            }}
-          />
-          <div>
-            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-              {networkInfo.name}
-            </span>
-            {isCorrect && (
-              <a
-                href={ETHERSCAN_BASE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="small"
-                style={{ marginLeft: 8, color: 'var(--primary)' }}
-              >
-                View on Etherscan ↗
-              </a>
+    <>
+      {showSessionBanner && (
+        <div className={`session-banner ${sessionWarning === 'red' ? 'session-banner-red' : 'session-banner-amber'}`} role="alert">
+          <span className="session-banner-msg">
+            {sessionWarning === 'red'
+              ? 'Your session expires in less than 1 minute. Save your work.'
+              : 'Your session expires in 5 minutes. Save your work.'}
+          </span>
+          <div className="session-banner-actions">
+            {onRenew && (
+              <button className="session-banner-renew" type="button" onClick={handleRenew}>
+                Renew session
+              </button>
             )}
+            <button
+              className="session-banner-dismiss"
+              type="button"
+              aria-label="Dismiss session warning"
+              onClick={() => setSessionDismissed(true)}
+            >
+              ×
+            </button>
           </div>
         </div>
-
-        {!isCorrect && (
-          <button
-            className="btn btn-primary"
-            onClick={handleSwitch}
-            disabled={switching}
-            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
-          >
-            {switching ? 'Switching…' : 'Switch to Sepolia'}
-          </button>
-        )}
-      </div>
-
-      {error && (
-        <div className="small" style={{ color: '#ef4444', marginTop: 6 }}>
-          {error}
-        </div>
       )}
 
-      {!isCorrect && (
-        <div className="small" style={{ marginTop: 6, color: '#666' }}>
-          Please switch to Sepolia Testnet to use blockchain features. Your transactions will be verifiable on Etherscan.
+      {networkInfo && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 12,
+            padding: '8px 12px',
+            backgroundColor: isCorrect ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            borderLeft: `4px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  backgroundColor: isCorrect ? '#22c55e' : '#ef4444',
+                  display: 'inline-block',
+                }}
+              />
+              <div>
+                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                  {networkInfo.name}
+                </span>
+                {isCorrect && (
+                  <a
+                    href={ETHERSCAN_BASE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="small"
+                    style={{ marginLeft: 8, color: 'var(--primary)' }}
+                  >
+                    View on Etherscan ↗
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {!isCorrect && (
+              <button
+                className="btn btn-primary"
+                onClick={handleSwitch}
+                disabled={switching}
+                style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+              >
+                {switching ? 'Switching…' : 'Switch to Sepolia'}
+              </button>
+            )}
+          </div>
+
+          {error && (
+            <div className="small" style={{ color: '#b91c1c', marginTop: 6 }}>
+              {error}
+            </div>
+          )}
+
+          {!isCorrect && (
+            <div className="small" style={{ marginTop: 6, color: '#666' }}>
+              Please switch to Sepolia Testnet to use blockchain features. Your transactions will be verifiable on Etherscan.
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 };
 
 export default NetworkStatus;
+
+/* ─── Session Expiry Banner (standalone, for shell-level mounting) ─── */
+interface SessionExpiryBannerProps {
+  onRenew?: () => Promise<void> | void;
+}
+
+export const SessionExpiryBanner: React.FC<SessionExpiryBannerProps> = ({ onRenew }) => {
+  const toast = useToast();
+  const [sessionWarning, setSessionWarning] = React.useState<'none' | 'amber' | 'red' | 'expired'>('none');
+  const expiredFiredRef = React.useRef(false);
+  const [sessionDismissed, setSessionDismissed] = React.useState(false);
+
+  const decodeTokenExpiry = React.useCallback((): number | null => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const json = atob(base64);
+      const payload = JSON.parse(json);
+      return typeof payload.exp === 'number' ? payload.exp : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const check = () => {
+      const exp = decodeTokenExpiry();
+      if (!exp) {
+        setSessionWarning('none');
+        return;
+      }
+      const nowSec = Math.floor(Date.now() / 1000);
+      const remaining = exp - nowSec;
+
+      if (remaining <= 0) {
+        setSessionWarning('expired');
+        if (!expiredFiredRef.current) {
+          expiredFiredRef.current = true;
+          clearAuth();
+          toast.critical('Your session has expired. Please log in again.');
+        }
+      } else if (remaining <= 60) {
+        setSessionWarning('red');
+        setSessionDismissed(false);
+      } else if (remaining <= 300) {
+        setSessionWarning('amber');
+      } else {
+        setSessionWarning('none');
+        expiredFiredRef.current = false;
+      }
+    };
+
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, [decodeTokenExpiry, toast]);
+
+  React.useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'token') {
+        setSessionWarning('none');
+        setSessionDismissed(false);
+        expiredFiredRef.current = false;
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  const handleRenew = async () => {
+    if (onRenew) {
+      await onRenew();
+      setSessionWarning('none');
+      setSessionDismissed(false);
+      expiredFiredRef.current = false;
+    }
+  };
+
+  const showBanner = !sessionDismissed && (sessionWarning === 'amber' || sessionWarning === 'red');
+  if (!showBanner) return null;
+
+  return (
+    <div className={`session-banner ${sessionWarning === 'red' ? 'session-banner-red' : 'session-banner-amber'}`} role="alert">
+      <span className="session-banner-msg">
+        {sessionWarning === 'red'
+          ? 'Your session expires in less than 1 minute. Save your work.'
+          : 'Your session expires in 5 minutes. Save your work.'}
+      </span>
+      <div className="session-banner-actions">
+        {onRenew && (
+          <button className="session-banner-renew" type="button" onClick={handleRenew}>
+            Renew session
+          </button>
+        )}
+        <button
+          className="session-banner-dismiss"
+          type="button"
+          aria-label="Dismiss session warning"
+          onClick={() => setSessionDismissed(true)}
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+};

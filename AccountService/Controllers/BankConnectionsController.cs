@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using AccountService.Data;
 using AccountService.Models;
+using AccountService.Policy;
 
 namespace AccountService.Controllers;
 
@@ -12,6 +13,7 @@ public class BankConnectionsController : ControllerBase
 {
     private readonly AccountDbContext _context;
     private readonly ILogger<BankConnectionsController> _logger;
+    private readonly IAccountLimitPolicy _limitPolicy;
 
     // Mock bank data for demo purposes (simulating Open Banking providers)
     private static readonly List<AvailableBank> MockBanks = new()
@@ -28,10 +30,11 @@ public class BankConnectionsController : ControllerBase
         new AvailableBank("uk_barclays", "Barclays", "🔵", "UK")
     };
 
-    public BankConnectionsController(AccountDbContext context, ILogger<BankConnectionsController> logger)
+    public BankConnectionsController(AccountDbContext context, ILogger<BankConnectionsController> logger, IAccountLimitPolicy limitPolicy)
     {
         _context = context;
         _logger = logger;
+        _limitPolicy = limitPolicy;
     }
 
     /// <summary>
@@ -85,6 +88,12 @@ public class BankConnectionsController : ControllerBase
         var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
         if (!Guid.TryParse(userIdClaim, out var userId))
             return Unauthorized();
+
+        var clientType = User.FindFirst("client_type")?.Value ?? "Individual";
+
+        var limitCheck = await _limitPolicy.CanAddBankConnectionAsync(userId, clientType);
+        if (!limitCheck.IsAllowed)
+            return UnprocessableEntity(new { errorCode = limitCheck.ErrorCode, message = limitCheck.ErrorMessage });
 
         var bank = MockBanks.FirstOrDefault(b => b.Id == request.BankId);
         if (bank == null)

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using UserService.Controllers;
 using UserService.Data;
+using UserService.Services;
 
 namespace Tests;
 
@@ -44,7 +45,7 @@ public class UsersControllerComprehensiveTests
         var loggerMock = logger ?? new Mock<ILogger<UsersController>>().Object;
         var configuration = config ?? _defaultConfig;
 
-        var controller = new UsersController(db, loggerMock, configuration)
+        var controller = new UsersController(db, loggerMock, configuration, new PasswordHasherService())
         {
             ControllerContext = new ControllerContext
             {
@@ -241,7 +242,7 @@ public class UsersControllerComprehensiveTests
         {
             Id = Guid.NewGuid(),
             Email = email.ToLowerInvariant(),
-            PasswordHash = UsersController.HashPasswordStatic(password),
+            PasswordHash = new PasswordHasherService().Hash(password),
             FirstName = "Test",
             LastName = "User",
             IsEmailVerified = true,
@@ -272,7 +273,7 @@ public class UsersControllerComprehensiveTests
         {
             Id = Guid.NewGuid(),
             Email = email.ToLowerInvariant(),
-            PasswordHash = UsersController.HashPasswordStatic("CorrectPass#123"),
+            PasswordHash = new PasswordHasherService().Hash("CorrectPass#123"),
             FirstName = "Test",
             LastName = "User",
             IsEmailVerified = true,
@@ -491,7 +492,7 @@ public class UsersControllerComprehensiveTests
         var password = "TestPassword#123";
 
         // Act
-        var hash = UsersController.HashPasswordStatic(password);
+        var hash = new PasswordHasherService().Hash(password);
 
         // Assert
         hash.Should().StartWith("v1$");
@@ -503,7 +504,7 @@ public class UsersControllerComprehensiveTests
     {
         // Arrange
         var password = "SecurePass#123";
-        var hash = UsersController.HashPasswordStatic(password);
+        var hash = new PasswordHasherService().Hash(password);
 
         // Act
         var result = VerifyPasswordHelper(password, hash);
@@ -518,7 +519,7 @@ public class UsersControllerComprehensiveTests
         // Arrange
         var password = "SecurePass#123";
         var wrongPassword = "WrongPass#123";
-        var hash = UsersController.HashPasswordStatic(password);
+        var hash = new PasswordHasherService().Hash(password);
 
         // Act
         var result = VerifyPasswordHelper(wrongPassword, hash);
@@ -527,12 +528,10 @@ public class UsersControllerComprehensiveTests
         result.Should().BeFalse();
     }
 
-    // Helper method using reflection to test private VerifyPassword
+    // Helper method delegating to the extracted PasswordHasherService
     private static bool VerifyPasswordHelper(string password, string hash)
     {
-        var method = typeof(UsersController).GetMethod("VerifyPassword",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        return (bool?)method?.Invoke(null, new object[] { password, hash }) ?? false;
+        return new PasswordHasherService().Verify(password, hash);
     }
 
     #endregion
@@ -617,7 +616,7 @@ public class UsersControllerComprehensiveTests
         {
             Id = Guid.NewGuid(),
             Email = email.ToLowerInvariant(),
-            PasswordHash = UsersController.HashPasswordStatic("Password#123"),
+            PasswordHash = new PasswordHasherService().Hash("Password#123"),
             FirstName = "Case",
             LastName = "Test",
             IsEmailVerified = true,

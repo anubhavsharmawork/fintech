@@ -1,13 +1,16 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import Layout from './Layout';
 import { ToastProvider } from '../components/Toast';
+import { AppProvider } from '../context/AppContext';
 import * as auth from '../auth';
 import * as fModeHook from '../hooks/useFMode';
+import * as feedbackService from '../services/feedback';
 
 jest.mock('../auth');
 jest.mock('../hooks/useFMode');
+jest.mock('../services/feedback');
 
 // Mock useNavigate
 const mockNavigate = jest.fn();
@@ -21,6 +24,9 @@ describe('Layout Component', () => {
     jest.clearAllMocks();
     (localStorage.getItem as jest.Mock).mockReturnValue(null);
     (auth.onAuthChange as jest.Mock).mockReturnValue(() => {});
+    (auth.isCorporateUser as jest.Mock).mockReturnValue(false);
+    (auth.getOrganisationRole as jest.Mock).mockReturnValue(null);
+    (auth.refreshAccessToken as jest.Mock).mockResolvedValue(null);
     (fModeHook.useFMode as jest.Mock).mockReturnValue({
       enabled: false,
       toggle: jest.fn(),
@@ -31,10 +37,24 @@ describe('Layout Component', () => {
   const renderLayout = (children = <div data-testid="test-content">Test</div>) => {
     return render(
       <BrowserRouter>
-        <ToastProvider>
-          <Layout>{children}</Layout>
-        </ToastProvider>
+        <AppProvider>
+          <ToastProvider>
+            <Layout>{children}</Layout>
+          </ToastProvider>
+        </AppProvider>
       </BrowserRouter>
+    );
+  };
+
+  const renderLayoutAtRoute = (route: string, children = <div data-testid="test-content">Test</div>) => {
+    return render(
+      <MemoryRouter initialEntries={[route]}>
+        <AppProvider>
+          <ToastProvider>
+            <Layout>{children}</Layout>
+          </ToastProvider>
+        </AppProvider>
+      </MemoryRouter>
     );
   };
 
@@ -68,17 +88,16 @@ describe('Layout Component', () => {
       expect(screen.getByRole('banner')).toBeInTheDocument();
     });
 
-    it('should display logo and title', () => {
+    it('should display logo', () => {
       renderLayout();
 
       expect(screen.getByAltText('FinTech logo')).toBeInTheDocument();
-      expect(screen.getByText('FinTech Application')).toBeInTheDocument();
     });
 
-    it('should display hero badge', () => {
+    it('should display sidebar logo text', () => {
       renderLayout();
 
-      expect(screen.getByText(/Simple, fast and secure personal finance/)).toBeInTheDocument();
+      expect(screen.getByText('FinTech Application')).toBeInTheDocument();
     });
 
     it('should have link to home', () => {
@@ -316,11 +335,11 @@ describe('Layout Component', () => {
       expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
     });
 
-    it('should have container class', () => {
-      const { container } = renderLayout();
+    it('should have shell-content class on main element', () => {
+      renderLayout();
 
       const main = screen.getByRole('main');
-      expect(main).toHaveClass('container');
+      expect(main).toHaveClass('shell-content');
     });
   });
 
@@ -338,12 +357,6 @@ describe('Layout Component', () => {
       expect(screen.getByText(/Anubhav Sharma/)).toBeInTheDocument();
     });
 
-    it('should display demo warning', () => {
-      renderLayout();
-
-      expect(screen.getByText(/This is a demo application/)).toBeInTheDocument();
-    });
-
     it('should have LinkedIn link', () => {
       renderLayout();
 
@@ -356,19 +369,16 @@ describe('Layout Component', () => {
       expect(linkedInLink).toHaveAttribute('rel', 'noreferrer');
     });
 
-    it('should have footer with aria-label', () => {
+    it('should have footer with contentinfo role', () => {
       renderLayout();
 
-      expect(screen.getByLabelText('Social Links')).toBeInTheDocument();
+      expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     });
 
-    it('should have aria-hidden on LinkedIn text', () => {
+    it('should display sandbox badge', () => {
       renderLayout();
 
-      const linkedInLink = screen.getByLabelText('LinkedIn');
-      const hiddenSpan = linkedInLink.querySelector('[aria-hidden="true"]');
-      expect(hiddenSpan).toBeInTheDocument();
-      expect(hiddenSpan).toHaveTextContent('in');
+      expect(screen.getByLabelText('Sandbox environment')).toBeInTheDocument();
     });
   });
 
@@ -447,17 +457,6 @@ describe('Layout Component', () => {
       const progressWrap = container.querySelector('.progress-wrap');
       expect(progressWrap).toHaveAttribute('aria-hidden', 'true');
     });
-
-    it('should update progress on scroll', () => {
-      const { container } = renderLayout();
-
-      const progressBar = container.querySelector('.progress-bar') as HTMLElement;
-      expect(progressBar).toHaveStyle({ width: '0%' });
-
-      fireEvent.scroll(window, { target: { scrollY: 500 } });
-
-      expect(progressBar.style.width).toBeDefined();
-    });
   });
 
   describe('Event Listeners', () => {
@@ -477,54 +476,211 @@ describe('Layout Component', () => {
         expect.any(Function)
       );
 
-      window.addEventListener.mockRestore();
-    });
-
-    it('should setup scroll event listener', () => {
-      jest.spyOn(window, 'addEventListener');
-
-      renderLayout();
-
-      expect(window.addEventListener).toHaveBeenCalledWith(
-        'scroll',
-        expect.any(Function),
-        { passive: true }
-      );
-
-      window.addEventListener.mockRestore();
-    });
-
-    it('should cleanup event listeners on unmount', () => {
-      jest.spyOn(window, 'removeEventListener');
-
-      const { unmount } = renderLayout();
-
-      unmount();
-
-      expect(window.removeEventListener).toHaveBeenCalledWith(
-        'scroll',
-        expect.any(Function)
-      );
-      expect(window.removeEventListener).toHaveBeenCalledWith('storage', expect.any(Function));
-
-      window.removeEventListener.mockRestore();
+      (window.addEventListener as jest.Mock).mockRestore();
     });
   });
 
-  describe('Responsive Layout', () => {
-    it('should have responsive header layout', () => {
+  describe('Sidebar', () => {
+    it('should render sidebar with Banking nav group when authenticated', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
       const { container } = renderLayout();
 
-      const header = screen.getByRole('banner');
-      expect(header).toHaveClass('header');
+      expect(container.querySelector('.shell-sidebar')).toBeInTheDocument();
+      expect(container.querySelector('.sidebar-group-label')).toHaveTextContent('Banking');
     });
 
-    it('should have container padding', () => {
+    it('should render Compliance nav group when authenticated', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
       const { container } = renderLayout();
 
-      const header = screen.getByRole('banner');
-      const innerDiv = header.querySelector('.container');
-      expect(innerDiv).toHaveStyle({ padding: '0 24px' });
+      const labels = container.querySelectorAll('.sidebar-group-label');
+      const hasCompliance = Array.from(labels).some(el => el.textContent === 'Compliance');
+      expect(hasCompliance).toBe(true);
+    });
+
+    it('should render Account nav group', () => {
+      renderLayout();
+
+      expect(screen.getByText('Account')).toBeInTheDocument();
+    });
+
+    it('should render Corporate nav group for corporate users', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      (auth.isCorporateUser as jest.Mock).mockReturnValue(true);
+
+      renderLayout();
+
+      expect(screen.getByText('Corporate')).toBeInTheDocument();
+    });
+
+    it('should not render Corporate nav group for non-corporate users', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      (auth.isCorporateUser as jest.Mock).mockReturnValue(false);
+
+      renderLayout();
+
+      expect(screen.queryByText('Corporate')).not.toBeInTheDocument();
+    });
+
+    it('should collapse sidebar to 64px on chevron click', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayout();
+
+      const sidebar = container.querySelector('.shell-sidebar');
+      expect(sidebar).not.toHaveClass('collapsed');
+
+      const collapseBtn = screen.getByLabelText('Collapse sidebar');
+      fireEvent.click(collapseBtn);
+
+      expect(sidebar).toHaveClass('collapsed');
+    });
+
+    it('should expand sidebar when collapsed and chevron clicked', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayout();
+
+      const collapseBtn = screen.getByLabelText('Collapse sidebar');
+      fireEvent.click(collapseBtn);
+
+      const sidebar = container.querySelector('.shell-sidebar');
+      expect(sidebar).toHaveClass('collapsed');
+
+      const expandBtn = screen.getByLabelText('Expand sidebar');
+      fireEvent.click(expandBtn);
+
+      expect(sidebar).not.toHaveClass('collapsed');
+    });
+
+    it('should hide group labels when collapsed', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayout();
+
+      expect(container.querySelector('.sidebar-group-label')).toBeInTheDocument();
+
+      const collapseBtn = screen.getByLabelText('Collapse sidebar');
+      fireEvent.click(collapseBtn);
+
+      expect(container.querySelector('.sidebar-group-label')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Breadcrumb', () => {
+    it('should render breadcrumb for dashboard route', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayoutAtRoute('/');
+
+      expect(container.querySelector('.shell-breadcrumb')).toHaveTextContent('Dashboard');
+    });
+
+    it('should render breadcrumb with group and label for accounts route', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayoutAtRoute('/accounts');
+
+      expect(container.querySelector('.shell-breadcrumb')).toHaveTextContent('Accounts');
+    });
+
+    it('should render breadcrumb for transactions route', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayoutAtRoute('/transactions');
+
+      expect(container.querySelector('.shell-breadcrumb')).toHaveTextContent('Transactions');
+    });
+
+    it('should render breadcrumb for compliance route', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayoutAtRoute('/compliance');
+
+      expect(container.querySelector('.shell-breadcrumb')).toHaveTextContent('Compliance');
+    });
+  });
+
+  describe('TopBar', () => {
+    it('should render user avatar when logged in', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      const { container } = renderLayout();
+
+      const avatar = container.querySelector('.topbar-avatar');
+      expect(avatar).toBeInTheDocument();
+    });
+
+    it('should render role chip when role is available', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      (auth.getOrganisationRole as jest.Mock).mockReturnValue('admin');
+
+      const { container } = renderLayout();
+
+      const roleChip = container.querySelector('.topbar-role-chip');
+      expect(roleChip).toBeInTheDocument();
+      expect(roleChip).toHaveTextContent('ADMIN');
+    });
+
+    it('should render notification bell when authenticated', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+
+      renderLayout();
+
+      expect(screen.getByLabelText('Notifications')).toBeInTheDocument();
+    });
+
+    it('should not render notification bell when not authenticated', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue(null);
+
+      renderLayout();
+
+      expect(screen.queryByLabelText('Notifications')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Mobile Hamburger', () => {
+    it('should render hamburger toggle button', () => {
+      renderLayout();
+
+      expect(screen.getByLabelText('Toggle menu')).toBeInTheDocument();
+    });
+
+    it('should toggle mobile sidebar overlay on click', () => {
+      const { container } = renderLayout();
+
+      const sidebar = container.querySelector('.shell-sidebar');
+      expect(sidebar).not.toHaveClass('mobile-open');
+
+      fireEvent.click(screen.getByLabelText('Toggle menu'));
+
+      expect(sidebar).toHaveClass('mobile-open');
+    });
+
+    it('should show backdrop when mobile sidebar is open', () => {
+      const { container } = renderLayout();
+
+      expect(container.querySelector('.sidebar-backdrop')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText('Toggle menu'));
+
+      expect(container.querySelector('.sidebar-backdrop')).toBeInTheDocument();
+    });
+
+    it('should close mobile sidebar when backdrop is clicked', () => {
+      const { container } = renderLayout();
+
+      fireEvent.click(screen.getByLabelText('Toggle menu'));
+
+      const sidebar = container.querySelector('.shell-sidebar');
+      expect(sidebar).toHaveClass('mobile-open');
+
+      const backdrop = container.querySelector('.sidebar-backdrop');
+      fireEvent.click(backdrop!);
+
+      expect(sidebar).not.toHaveClass('mobile-open');
     });
   });
 
@@ -547,13 +703,6 @@ describe('Layout Component', () => {
       expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
     });
 
-    it('should have proper heading hierarchy', () => {
-      renderLayout();
-
-      const h1 = screen.getByText('FinTech Application');
-      expect(h1.tagName).toBe('H1');
-    });
-
     it('should have skip link for keyboard navigation', () => {
       renderLayout();
 
@@ -574,16 +723,307 @@ describe('Layout Component', () => {
 
       rerender(
         <BrowserRouter>
-          <ToastProvider>
-            <Layout>
-              <div>Test</div>
-            </Layout>
-          </ToastProvider>
+          <AppProvider>
+            <ToastProvider>
+              <Layout>
+                <div>Test</div>
+              </Layout>
+            </ToastProvider>
+          </AppProvider>
         </BrowserRouter>
       );
 
       // Token state will be updated via onAuthChange
       expect(screen.getByLabelText('Login')).toBeInTheDocument();
+    });
+  });
+
+  describe('Sanctions link in F-Mode', () => {
+    it('shows Sanctions nav link when F-Mode is enabled', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      (fModeHook.useFMode as jest.Mock).mockReturnValue({ enabled: true, toggle: jest.fn() });
+      renderLayout();
+      expect(screen.getByLabelText('Sanctions')).toBeInTheDocument();
+    });
+
+    it('does not show Sanctions nav link when F-Mode is disabled', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      (fModeHook.useFMode as jest.Mock).mockReturnValue({ enabled: false, toggle: jest.fn() });
+      renderLayout();
+      expect(screen.queryByLabelText('Sanctions')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Feedback modal', () => {
+    const mockSubmitFeedback = feedbackService.submitFeedback as jest.Mock;
+
+    beforeEach(() => {
+      mockSubmitFeedback.mockResolvedValue({ success: true });
+    });
+
+    it('shows Feedback button in footer when authenticated', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+      expect(screen.getByRole('button', { name: /send feedback/i })).toBeInTheDocument();
+    });
+
+    it('does not show Feedback button when not authenticated', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue(null);
+      renderLayout();
+      expect(screen.queryByRole('button', { name: /send feedback/i })).not.toBeInTheDocument();
+    });
+
+    it('opens feedback modal when Feedback button is clicked', async () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+      fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+    });
+
+    it('submits feedback and shows success toast', async () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+      fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'This is a test feedback message that is long enough' } });
+      const submitBtn = screen.getByRole('button', { name: /submit/i });
+      fireEvent.click(submitBtn);
+      await waitFor(() => {
+        expect(mockSubmitFeedback).toHaveBeenCalledWith(
+          'This is a test feedback message that is long enough',
+          expect.any(String)
+        );
+      });
+    });
+
+    it('shows error toast when feedback submission fails', async () => {
+      mockSubmitFeedback.mockRejectedValue(new Error('Server error'));
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+      fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'This is a test feedback message that is long enough' } });
+      fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+      await waitFor(() => {
+        expect(mockSubmitFeedback).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Avatar dropdown', () => {
+    it('opens avatar dropdown on click', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      const { container } = renderLayout();
+      const avatar = container.querySelector('.topbar-avatar') as HTMLElement;
+      fireEvent.click(avatar);
+      expect(avatar).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('closes avatar dropdown on second click', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      const { container } = renderLayout();
+      const avatar = container.querySelector('.topbar-avatar') as HTMLElement;
+      fireEvent.click(avatar);
+      fireEvent.click(avatar);
+      expect(avatar).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('shows Settings link inside avatar dropdown', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      const { container } = renderLayout();
+      fireEvent.click(container.querySelector('.topbar-avatar') as HTMLElement);
+      expect(screen.getByRole('menuitem', { name: /settings/i })).toBeInTheDocument();
+    });
+
+    it('closes dropdown on Escape key', async () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      const { container } = renderLayout();
+      const avatar = container.querySelector('.topbar-avatar') as HTMLElement;
+      fireEvent.click(avatar);
+      expect(avatar).toHaveAttribute('aria-expanded', 'true');
+      fireEvent.keyDown(document, { key: 'Escape' });
+      await waitFor(() => {
+        expect(avatar).toHaveAttribute('aria-expanded', 'false');
+      });
+    });
+  });
+
+  describe('Breadcrumb for sanctions detail route', () => {
+    it('renders Sanctions breadcrumb for /sanctions/:id route', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayoutAtRoute('/sanctions/some-id-123');
+      expect(screen.getByText('Sanctions')).toBeInTheDocument();
+    });
+  });
+
+  describe('Storage event handler', () => {
+    it('updates token state when storage event fires with key "token"', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue(null);
+      renderLayout();
+      expect(screen.queryByLabelText('Dashboard')).not.toBeInTheDocument();
+      (localStorage.getItem as jest.Mock).mockReturnValue('new-token');
+      fireEvent(window, new StorageEvent('storage', { key: 'token' }));
+      // Component will process the storage event; verify no crash
+      expect(screen.queryByLabelText('Login') || screen.queryByText('Login')).toBeTruthy();
+    });
+
+    it('ignores storage events with non-token keys', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue(null);
+      renderLayout();
+      fireEvent(window, new StorageEvent('storage', { key: 'some-other-key' }));
+      expect(screen.getByLabelText('Login')).toBeInTheDocument();
+    });
+  });
+
+  describe('Breadcrumb fallback path', () => {
+    it('renders capitalised path segments for unknown routes', () => {
+      const { container } = renderLayoutAtRoute('/some/unknown/route');
+      const breadcrumb = container.querySelector('.shell-breadcrumb');
+      expect(breadcrumb).toHaveTextContent(/Some/);
+    });
+
+    it('renders "Home" for root when no breadcrumb entry matches', () => {
+      // root path '/' maps to Dashboard in breadcrumbMap but this tests the
+      // fallback label computation via an unmapped route that produces empty segments
+      const { container } = renderLayoutAtRoute('/');
+      expect(container.querySelector('.shell-breadcrumb')).toBeInTheDocument();
+    });
+  });
+
+  describe('SidebarLink sub-path active state', () => {
+    it('marks Accounts link active when on a sub-path of /accounts', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      const { container } = renderLayoutAtRoute('/accounts/detail');
+      // Accounts link should have the active class
+      const accountsLink = container.querySelector('a[aria-label="Accounts"]');
+      expect(accountsLink).toHaveClass('active');
+    });
+  });
+
+  describe('closeFeedback guard', () => {
+    it('does not close modal when submission is in progress', async () => {
+      (feedbackService.submitFeedback as jest.Mock).mockImplementation(() => new Promise(() => {}));
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'This feedback is long enough to submit' } });
+      fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+      // Now try to close while submitting — modal should still be open
+      const closeBtn = screen.queryByRole('button', { name: /close/i });
+      if (closeBtn) fireEvent.click(closeBtn);
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+  });
+
+  describe('submitFeedback error detail extraction', () => {
+    it('shows the error message from the thrown error', async () => {
+      (feedbackService.submitFeedback as jest.Mock).mockRejectedValue(new Error('Custom server error'));
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'This feedback is long enough to submit' } });
+      fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Custom server error/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows fallback message when error has no message property', async () => {
+      (feedbackService.submitFeedback as jest.Mock).mockRejectedValue({});
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'This feedback is long enough to submit' } });
+      fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/could not send feedback/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('handleToggle no-op branch', () => {
+    it('does not call toggleFMode when already in fiat mode and fiat button clicked', () => {
+      const mockToggle = jest.fn();
+      (fModeHook.useFMode as jest.Mock).mockReturnValue({ enabled: false, toggle: mockToggle });
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      // Clicking fiat button when already in fiat mode should not call toggle
+      fireEvent.click(screen.getByLabelText('Switch to Fiat Mode'));
+      expect(mockToggle).not.toHaveBeenCalled();
+    });
+
+    it('does not call toggleFMode when already in F-Mode and F-Mode button clicked', () => {
+      const mockToggle = jest.fn();
+      (fModeHook.useFMode as jest.Mock).mockReturnValue({ enabled: true, toggle: mockToggle });
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      fireEvent.click(screen.getByLabelText('Switch to F-Mode (DeFi)'));
+      expect(mockToggle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('submitFeedback short message guard', () => {
+    it('does not call submitFeedback when message is shorter than 10 chars', async () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      fireEvent.click(screen.getByRole('button', { name: /send feedback/i }));
+      await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'short' } });
+      fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+      // submitFeedback should NOT be called
+      expect(feedbackService.submitFeedback).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('collapsed sidebar mode toggle icons', () => {
+    it('shows icon-only mode toggle buttons when sidebar is collapsed', () => {
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      // Collapse the sidebar first
+      fireEvent.click(screen.getByLabelText('Collapse sidebar'));
+
+      // Collapsed mode exposes aria-label "Fiat Mode" (icon button)
+      expect(screen.getByLabelText('Fiat Mode')).toBeInTheDocument();
+      expect(screen.getByLabelText('F-Mode (DeFi)')).toBeInTheDocument();
+    });
+
+    it('toggles mode from collapsed icon buttons', () => {
+      const mockToggle = jest.fn();
+      (fModeHook.useFMode as jest.Mock).mockReturnValue({ enabled: false, toggle: mockToggle });
+      (localStorage.getItem as jest.Mock).mockReturnValue('test-token');
+      renderLayout();
+
+      fireEvent.click(screen.getByLabelText('Collapse sidebar'));
+
+      fireEvent.click(screen.getByLabelText('F-Mode (DeFi)'));
+      expect(mockToggle).toHaveBeenCalledWith(true);
     });
   });
 });

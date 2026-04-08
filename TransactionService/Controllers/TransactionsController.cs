@@ -1,124 +1,146 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Contracts;
 using Microsoft.AspNetCore.Authorization;
-using MassTransit;
-using TransactionService.Constants;
-using TransactionService.Data;
+using Microsoft.AspNetCore.Mvc;
+using TransactionService.Filters;
 using TransactionService.Models.Dtos;
-using Contracts.Events;
+using TransactionService.Services;
 
 namespace TransactionService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TransactionsController : ControllerBase
+public class TransactionsController : FintechControllerBase
 {
-    private readonly TransactionDbContext _context;
-    private readonly IPublishEndpoint _publishEndpoint;
-    private readonly ILogger<TransactionsController> _logger;
+    private readonly ITransactionService _transactionService;
+    private const int DefaultPageSize = 50;
 
-    public TransactionsController(
-        TransactionDbContext context, 
-        IPublishEndpoint publishEndpoint,
-        ILogger<TransactionsController> logger)
+    public TransactionsController(ITransactionService transactionService)
     {
-        _context = context;
-        _publishEndpoint = publishEndpoint;
-        _logger = logger;
+        _transactionService = transactionService;
     }
 
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> GetTransactions([FromQuery] Guid? accountId = null)
+    [ETagFilter]
+    public async Task<IActionResult> GetTransactions(
+        [FromQuery] Guid? accountId = null, 
+        [FromQuery] Guid? batchId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = DefaultPageSize,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] string? transactionType = null,
+        [FromQuery] decimal? minAmount = null,
+        [FromQuery] decimal? maxAmount = null,
+        [FromQuery] string? searchTerm = null)
     {
-        var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        // Validate date range
+        if (fromDate.HasValue && toDate.HasValue && fromDate.Value > toDate.Value)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                Title = "Invalid date range",
+                Status = 400,
+                Detail = "fromDate cannot be greater than toDate."
+            });
+        }
+
+        // Validate amount range
+        if (minAmount.HasValue && maxAmount.HasValue && minAmount.Value > maxAmount.Value)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                Title = "Invalid amount range",
+                Status = 400,
+                Detail = "minAmount cannot be greater than maxAmount."
+            });
+        }
+
+        try
+        {
+            var filter = new TransactionFilterDto
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                TransactionType = transactionType,
+                MinAmount = minAmount,
+                MaxAmount = maxAmount,
+                SearchTerm = searchTerm
+            };
+
+            var result = await _transactionService.GetTransactionsAsync(
+                CurrentUserId,
+                accountId,
+                batchId,
+                page,
+                pageSize,
+                filter);
+
+            return Ok(result);
+        }
+        catch (MissingClaimUnauthorizedException)
+        {
             return Unauthorized();
+        }
+    }
 
-        var query = _context.Transactions.Where(t => t.UserId == userId);
-        
-        if (accountId.HasValue)
-            query = query.Where(t => t.AccountId == accountId.Value);
+    [HttpGet("organisation/{organisationId}")]
+    [Authorize]
+    [ETagFilter]
+    public async Task<IActionResult> GetOrganisationTransactions(Guid organisationId)
+    {
+        try
+        {
+            if (CurrentOrganisationId != organisationId)
+                return Forbid();
 
-        var transactions = await query
-            .OrderByDescending(t => t.CreatedAt)
-            .ToListAsync();
-
-        return Ok(transactions.Select(t => new {
-            id = t.Id,
-            accountId = t.AccountId,
-            amount = t.Amount,
-            currency = t.Currency,
-            type = t.Type,
-            description = t.Description,
-            spendingType = t.SpendingType,
-            txHash = t.TxHash,
-            createdAt = t.CreatedAt
-        }));
+            var result = await _transactionService.GetOrganisationTransactionsAsync(organisationId);
+            return Ok(result);
+        }
+        catch (MissingClaimUnauthorizedException)
+        {
+            return Unauthorized();
+        }
     }
 
     [HttpPost]
     [Authorize]
+    [IdempotencyFilter]
     public async Task<IActionResult> CreateTransaction([FromBody] CreatePaymentRequestDto request)
     {
-        var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("id")?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId))
-            return Unauthorized();
-
-        var spendingType = request.SpendingType ?? "Fun";
-        if (!SpendingTypeConstants.IsValid(spendingType))
+        try
         {
-            return BadRequest(new { error = "Invalid spendingType. Allowed: Fun, Fixed, Future" });
+            var clientType = User.FindFirst("client_type")?.Value ?? "Individual";
+            Guid? orgId = Guid.TryParse(User.FindFirst("organisation_id")?.Value, out var parsedOrgId) ? parsedOrgId : null;
+
+            var result = await _transactionService.CreateTransactionAsync(CurrentUserId, clientType, orgId, request);
+            return Ok(result);
         }
-
-        var normalizedSpendingType = SpendingTypeConstants.Normalize(spendingType);
-        var txHash = string.IsNullOrWhiteSpace(request.TxHash) ? null : request.TxHash.Trim();
-        var currency = string.IsNullOrWhiteSpace(request.Currency) ? "USD" : request.Currency.Trim().ToUpperInvariant();
-        var type = string.IsNullOrWhiteSpace(request.Type) ? "debit" : request.Type.Trim();
-        var description = request.Description?.Trim() ?? string.Empty;
-
-        var transaction = new Transaction
+        catch (MissingClaimUnauthorizedException)
         {
-            Id = Guid.NewGuid(),
-            AccountId = request.AccountId,
-            UserId = userId,
-            Amount = request.Amount,
-            Currency = currency,
-            Type = type,
-            Description = description,
-            SpendingType = normalizedSpendingType,
-            TxHash = txHash,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _context.Transactions.Add(transaction);
-        await _context.SaveChangesAsync();
-
-        var transactionCreated = new TransactionCreated(
-            transaction.Id,
-            transaction.AccountId,
-            transaction.UserId,
-            transaction.Amount,
-            transaction.Currency,
-            transaction.Type,
-            transaction.CreatedAt
-        );
-
-        await _publishEndpoint.Publish(transactionCreated);
-
-        _logger.LogInformation("Transaction created: {TransactionId} for account {AccountId}", 
-            transaction.Id, transaction.AccountId);
-
-        return Ok(new {
-            id = transaction.Id,
-            accountId = transaction.AccountId,
-            amount = transaction.Amount,
-            currency = transaction.Currency,
-            type = transaction.Type,
-            description = transaction.Description,
-            spendingType = transaction.SpendingType,
-            txHash = transaction.TxHash,
-            createdAt = transaction.CreatedAt
-        });
+            return Unauthorized();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }
+
+public record TransactionDto(
+    Guid Id,
+    Guid AccountId,
+    decimal Amount,
+    string Currency,
+    string Type,
+    string? Description,
+    string? SpendingType,
+    string? TxHash,
+    DateTime CreatedAt,
+    string? ClientType,
+    Guid? OrganisationId,
+    Guid? PaymentBatchId,
+    string Status
+);

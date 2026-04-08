@@ -6,6 +6,12 @@ interface Props {
 }
 
 const CryptoModeBanner: React.FC<Props> = ({ enabled, onDismiss }) => {
+  React.useEffect(() => {
+    if (!enabled) return;
+    const timer = setTimeout(() => onDismiss?.(), 3000);
+    return () => clearTimeout(timer);
+  }, [enabled, onDismiss]);
+
   if (!enabled) return null;
   const handleDismiss = (e: React.KeyboardEvent | React.MouseEvent) => {
     if (e instanceof KeyboardEvent && e.key !== 'Enter' && e.key !== ' ') {
@@ -20,7 +26,7 @@ const CryptoModeBanner: React.FC<Props> = ({ enabled, onDismiss }) => {
       aria-live="polite" 
       aria-label="F-Mode notification"
       style={{ 
-        background: '#14b8a6', 
+        background: '#0f766e', 
         color: '#fff', 
         padding: '10px 16px', 
         borderRadius: 8, 
@@ -31,7 +37,7 @@ const CryptoModeBanner: React.FC<Props> = ({ enabled, onDismiss }) => {
       }}
     >
       <div>
-        <strong>F-Mode enabled:</strong> showing crypto accounts and features
+        F-Mode enabled: showing crypto accounts and features
       </div>
       <button 
         className="btn btn-secondary" 

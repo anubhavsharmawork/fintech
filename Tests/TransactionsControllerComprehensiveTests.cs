@@ -2,12 +2,15 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.InMemory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MassTransit;
 using TransactionService.Controllers;
 using TransactionService.Data;
 using TransactionService.Models.Dtos;
+using TransactionService.Services;
 using Contracts.Events;
 
 namespace Tests;
@@ -23,12 +26,22 @@ public class TransactionsControllerComprehensiveTests
     {
         var options = new DbContextOptionsBuilder<TransactionDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         var db = new TransactionDbContext(options);
-        var loggerMock = logger ?? new Mock<ILogger<TransactionsController>>().Object;
         var publisherMock = new Mock<IPublishEndpoint>();
+        var amlChannelMock = new Mock<IAmlScreeningChannel>();
+        var cacheServiceMock = new Mock<ICacheService>();
+        var serviceLogger = new Mock<ILogger<TransactionService.Services.TransactionService>>();
+        amlChannelMock.Setup(a => a.TryEnqueue(It.IsAny<Transaction>())).Returns(true);
+        var service = new TransactionService.Services.TransactionService(
+            db,
+            publisherMock.Object,
+            amlChannelMock.Object,
+            cacheServiceMock.Object,
+            serviceLogger.Object);
 
-        var controller = new TransactionsController(db, publisherMock.Object, loggerMock)
+        var controller = new TransactionsController(service)
         {
             ControllerContext = new ControllerContext
             {
@@ -64,7 +77,7 @@ public class TransactionsControllerComprehensiveTests
             AccountId = accountId,
             UserId = userId,
             Amount = 100,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             Description = "Coffee",
             SpendingType = "Fun",
@@ -77,7 +90,7 @@ public class TransactionsControllerComprehensiveTests
             AccountId = accountId,
             UserId = userId,
             Amount = 50,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "credit",
             Description = "Refund",
             SpendingType = "Fun",
@@ -94,7 +107,7 @@ public class TransactionsControllerComprehensiveTests
         // Assert
         result.Should().BeOfType<OkObjectResult>();
         var okResult = (OkObjectResult)result;
-        var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<dynamic>().ToList();
+        var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
         transactions.Should().HaveCount(2);
     }
 
@@ -108,8 +121,8 @@ public class TransactionsControllerComprehensiveTests
         var accountId2 = Guid.NewGuid();
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId1, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId2, UserId = userId, Amount = 200, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId1, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId2, UserId = userId, Amount = 200, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
         );
         await db.SaveChangesAsync();
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
@@ -119,7 +132,7 @@ public class TransactionsControllerComprehensiveTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<dynamic>().ToList();
+        var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
         transactions.Should().HaveCount(1);
     }
 
@@ -133,9 +146,9 @@ public class TransactionsControllerComprehensiveTests
         var now = DateTime.UtcNow;
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-2) },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 150, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-1) }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-2) },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 200, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 150, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = now.AddHours(-1) }
         );
         await db.SaveChangesAsync();
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
@@ -145,7 +158,7 @@ public class TransactionsControllerComprehensiveTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<object>().ToList();
+        var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
         transactions.Should().HaveCount(3);
         // Verify first transaction has the highest amount (most recent)
         var firstAmount = GetProperty(transactions![0], "amount");
@@ -176,8 +189,8 @@ public class TransactionsControllerComprehensiveTests
         var accountId = Guid.NewGuid();
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = otherUserId, Amount = 9999, Currency = "USD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = userId, Amount = 100, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = otherUserId, Amount = 9999, Currency = "NZD", Type = "debit", Description = "Test transaction", SpendingType = "Fun", CreatedAt = DateTime.UtcNow }
         );
         await db.SaveChangesAsync();
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
@@ -187,7 +200,7 @@ public class TransactionsControllerComprehensiveTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        var transactions = (okResult.Value as System.Collections.IEnumerable)?.Cast<dynamic>().ToList();
+        var transactions = ((TransactionPagedResponse<object>)okResult.Value!).Data.ToList();
         transactions.Should().HaveCount(1);
     }
 
@@ -206,7 +219,7 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = accountId,
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             Description = "Test transaction",
             SpendingType = "Fun",
@@ -241,7 +254,7 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = spendingType
         };
@@ -268,7 +281,7 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = spendingType
         };
@@ -292,9 +305,34 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             SpendingType = null
+        };
+
+        controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
+
+        // Act
+        var result = await controller.CreateTransaction(request);
+
+        // Assert
+        var okResult = (OkObjectResult)result;
+        GetProperty(okResult.Value, "spendingType").Should().Be("Fun");
+    }
+
+    [Fact]
+    public async Task CreateTransaction_WithoutSpendingType_UsesDefault()
+    {
+        // Arrange
+        var (controller, _, _) = BuildController();
+        var userId = Guid.NewGuid();
+        var request = new CreatePaymentRequestDto
+        {
+            AccountId = Guid.NewGuid(),
+            Amount = 100m,
+            Currency = "NZD",
+            Type = "debit",
+            SpendingType = null!
         };
 
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
@@ -317,7 +355,7 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = null,
+            Currency = null!,
             Type = "debit",
             SpendingType = "Fun"
         };
@@ -329,7 +367,7 @@ public class TransactionsControllerComprehensiveTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        GetProperty(okResult.Value, "currency").Should().Be("USD");
+        GetProperty(okResult.Value, "currency").Should().Be("NZD");
     }
 
     [Fact]
@@ -367,8 +405,8 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
-            Type = null,
+            Currency = "NZD",
+            Type = null!,
             SpendingType = "Fun"
         };
 
@@ -391,7 +429,7 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD"
+            Currency = "NZD"
         };
 
         controller.ControllerContext.HttpContext!.User = new ClaimsPrincipal(new ClaimsIdentity());
@@ -413,7 +451,7 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             SpendingType = "Fun"
         };
 
@@ -473,7 +511,7 @@ public class TransactionsControllerComprehensiveTests
         {
             AccountId = Guid.NewGuid(),
             Amount = 100m,
-            Currency = "USD"
+            Currency = "NZD"
         };
 
         // Act
@@ -496,7 +534,7 @@ public class TransactionsControllerComprehensiveTests
             AccountId = Guid.NewGuid(),
             UserId = userId,
             Amount = 100m,
-            Currency = "USD",
+            Currency = "NZD",
             Type = "debit",
             Description = "Test transaction",
             SpendingType = "Fun",

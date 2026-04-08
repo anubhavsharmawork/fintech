@@ -234,7 +234,7 @@ describe('ConnectWallet Component', () => {
 
       await waitFor(() => {
         const errorElement = screen.getByText('Connection error');
-        expect(errorElement).toHaveStyle({ color: 'red' });
+        expect(errorElement).toHaveStyle({ color: '#991b1b' });
       });
     });
 

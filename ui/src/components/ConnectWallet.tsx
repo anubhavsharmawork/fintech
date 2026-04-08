@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Eye, Wallet, Link2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { connectWallet, getEtherscanAddressUrl, isValidAddress, isMetaMaskAvailable, DEMO_WALLET, NetworkInfo } from '../services/crypto';
 import NetworkStatus from './NetworkStatus';
 
@@ -95,9 +96,9 @@ const ConnectWallet: React.FC<Props> = ({ onConnected, onDisconnected }) => {
           alignItems: 'center',
           gap: 8
         }}>
-          <span style={{ fontSize: '1.1rem' }}>👁️</span>
+          <span style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center' }}><Eye size={18} color="currentColor" /></span>
           <div>
-            <strong style={{ color: '#d97706' }}>Demo Mode</strong>
+            <strong style={{ color: '#92400e' }}>Demo Mode</strong>
             <div className="small" style={{ color: '#92400e' }}>
               Viewing with sample data. Transfers are disabled. Install MetaMask for real transactions.
             </div>
@@ -108,14 +109,14 @@ const ConnectWallet: React.FC<Props> = ({ onConnected, onDisconnected }) => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', marginTop: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '1.2rem' }}>{isDemo ? '👁️' : '🦊'}</span>
-            Wallet {isDemo && <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 500 }}>(Demo)</span>}
+            <span style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>{isDemo ? <Eye size={20} color="currentColor" /> : <Wallet size={20} color="currentColor" />}</span>
+            Wallet {isDemo && <span style={{ fontSize: '0.75rem', color: '#92400e', fontWeight: 500 }}>(Demo)</span>}
           </div>
           {address ? (
             <div className="small" style={{ marginTop: 4 }}>
               <span style={{ 
                 backgroundColor: isDemo ? 'rgba(251, 191, 36, 0.15)' : 'rgba(34, 197, 94, 0.1)', 
-                color: isDemo ? '#d97706' : '#22c55e', 
+                color: isDemo ? '#92400e' : '#047857',
                 padding: '2px 8px', 
                 borderRadius: 4, 
                 fontSize: '0.75rem',
@@ -140,7 +141,7 @@ const ConnectWallet: React.FC<Props> = ({ onConnected, onDisconnected }) => {
               )}
             </div>
           ) : (
-            <div className="small" style={{ color: '#888', marginTop: 4 }}>
+            <div className="small" style={{ color: '#6b7280', marginTop: 4 }}>
               {hasMetaMask 
                 ? 'Connect MetaMask to send real testnet transactions' 
                 : 'MetaMask not detected. Use Demo Mode to preview or install MetaMask.'}
@@ -156,7 +157,7 @@ const ConnectWallet: React.FC<Props> = ({ onConnected, onDisconnected }) => {
                 disabled={loading}
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                {loading ? 'Connecting…' : '🔗 Connect Wallet'}
+                {loading ? 'Connecting…' : <><Link2 size={16} color="currentColor" /> Connect Wallet</>}
               </button>
             ) : (
               <button 
@@ -164,7 +165,7 @@ const ConnectWallet: React.FC<Props> = ({ onConnected, onDisconnected }) => {
                 onClick={handleDemoMode}
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                👁️ View Demo
+                <Eye size={16} color="currentColor" /> View Demo
               </button>
             )}
             {hasMetaMask && (
@@ -185,14 +186,14 @@ const ConnectWallet: React.FC<Props> = ({ onConnected, onDisconnected }) => {
       </div>
 
       {error && (
-        <div className="small" style={{ color: '#ef4444', marginTop: 8, padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 4 }}>
-          ⚠️ {error}
+        <div className="small" style={{ color: '#991b1b', marginTop: 8, padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 4 }}>
+          <AlertTriangle size={14} color="currentColor" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> {error}
         </div>
       )}
 
       {address && !isDemo && networkOk && (
         <div className="small" style={{ marginTop: 8, color: '#666', padding: '8px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 4 }}>
-          ✅ Ready for real blockchain transactions on Sepolia testnet. All transactions are verifiable on Etherscan.
+          <CheckCircle size={14} color="currentColor" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} /> Ready for real blockchain transactions on Sepolia testnet. All transactions are verifiable on Etherscan.
         </div>
       )}
     </div>

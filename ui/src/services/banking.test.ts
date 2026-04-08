@@ -11,7 +11,8 @@ import {
 } from './banking';
 
 describe('Banking Service', () => {
-  const mockToken = 'test-jwt-token';
+  // Valid JWT with far-future expiry to avoid refresh attempts
+  const mockToken = 'header.eyJleHAiOjk5OTk5OTk5OTl9.sig';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -62,12 +63,12 @@ describe('Banking Service', () => {
 
       const result = await getAvailableBanks();
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections/available', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${mockToken}`
-        }
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/bankconnections/available',
+        expect.objectContaining({
+          credentials: 'include'
+        })
+      );
       expect(result).toEqual(mockAvailableBanks);
     });
 
@@ -79,34 +80,36 @@ describe('Banking Service', () => {
 
       const result = await getAvailableBanks('NZ');
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections/available?country=NZ', expect.any(Object));
+      expect(fetch).toHaveBeenCalledWith(
+        '/bankconnections/available?country=NZ',
+        expect.any(Object)
+      );
       expect(result).toEqual(mockAvailableBanks);
     });
 
     it('should throw error when fetch fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
-        status: 500
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => 'Internal Server Error'
       });
 
-      await expect(getAvailableBanks()).rejects.toThrow('Failed to fetch available banks (500)');
+      await expect(getAvailableBanks()).rejects.toThrow('Internal Server Error');
     });
 
-    it('should include empty auth header when no token', async () => {
+    it('should work without auth token', async () => {
       localStorage.removeItem('token');
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => []
       });
 
-      await getAvailableBanks();
+      const result = await getAvailableBanks();
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections/available', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': ''
-        }
-      });
+      expect(fetch).toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
   });
 
@@ -119,22 +122,25 @@ describe('Banking Service', () => {
 
       const result = await getConnectedBanks();
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${mockToken}`
-        }
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/bankconnections',
+        expect.objectContaining({
+          credentials: 'include'
+        })
+      );
       expect(result).toEqual(mockConnections);
     });
 
     it('should throw error when fetch fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
-        status: 401
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => 'Unauthorized'
       });
 
-      await expect(getConnectedBanks()).rejects.toThrow('Failed to fetch connected banks (401)');
+      await expect(getConnectedBanks()).rejects.toThrow('Unauthorized');
     });
   });
 
@@ -149,14 +155,13 @@ describe('Banking Service', () => {
 
       const result = await connectBank('bank1');
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections/connect', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${mockToken}`
-        },
-        body: JSON.stringify({ bankId: 'bank1' })
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/bankconnections/connect',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include'
+        })
+      );
       expect(result).toEqual(mockResponse);
     });
 
@@ -172,7 +177,10 @@ describe('Banking Service', () => {
     it('should throw generic error for other failures', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
-        status: 500
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => 'Internal Server Error'
       });
 
       await expect(connectBank('bank1')).rejects.toThrow('Failed to connect bank (500)');
@@ -187,22 +195,25 @@ describe('Banking Service', () => {
 
       await disconnectBank('conn123');
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections/conn123', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${mockToken}`
-        }
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/bankconnections/conn123',
+        expect.objectContaining({
+          method: 'DELETE',
+          credentials: 'include'
+        })
+      );
     });
 
     it('should throw error when disconnect fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
-        status: 404
+        status: 404,
+        statusText: 'Not Found',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => 'Not Found'
       });
 
-      await expect(disconnectBank('conn123')).rejects.toThrow('Failed to disconnect bank (404)');
+      await expect(disconnectBank('conn123')).rejects.toThrow('Not Found');
     });
   });
 
@@ -215,22 +226,25 @@ describe('Banking Service', () => {
 
       const result = await getExternalAccounts();
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections/accounts', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${mockToken}`
-        }
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/bankconnections/accounts',
+        expect.objectContaining({
+          credentials: 'include'
+        })
+      );
       expect(result).toEqual(mockExternalAccounts);
     });
 
     it('should throw error when fetch fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
-        status: 500
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => 'Internal Server Error'
       });
 
-      await expect(getExternalAccounts()).rejects.toThrow('Failed to fetch external accounts (500)');
+      await expect(getExternalAccounts()).rejects.toThrow('Internal Server Error');
     });
   });
 
@@ -244,23 +258,26 @@ describe('Banking Service', () => {
 
       const result = await syncBankAccounts('conn123');
 
-      expect(fetch).toHaveBeenCalledWith('/bankconnections/conn123/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${mockToken}`
-        }
-      });
+      expect(fetch).toHaveBeenCalledWith(
+        '/bankconnections/conn123/sync',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include'
+        })
+      );
       expect(result).toEqual(mockResponse);
     });
 
     it('should throw error when sync fails', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
-        status: 500
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async () => 'Internal Server Error'
       });
 
-      await expect(syncBankAccounts('conn123')).rejects.toThrow('Failed to sync accounts (500)');
+      await expect(syncBankAccounts('conn123')).rejects.toThrow('Internal Server Error');
     });
   });
 });

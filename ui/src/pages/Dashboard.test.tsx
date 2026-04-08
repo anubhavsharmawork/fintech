@@ -8,6 +8,17 @@ import * as fModeHook from '../hooks/useFMode';
 jest.mock('../auth');
 jest.mock('../hooks/useFMode');
 
+// Mock Recharts to avoid rendering issues in tests
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div data-testid="responsive-container">{children}</div>,
+  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
+  Area: () => <div data-testid="area" />,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+}));
+
 describe('Dashboard Page', () => {
   const mockToggle = jest.fn();
   const mockAuthFetch = auth.authFetch as jest.Mock;

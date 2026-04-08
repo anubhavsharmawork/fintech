@@ -1,55 +1,54 @@
-using MassTransit;
 using Contracts.Events;
+using FluentEmail.Core;
+using MassTransit;
+using NotificationService.Services;
+using NotificationService.Stores;
 
 namespace NotificationService.Consumers;
 
 public class TransactionCreatedConsumer : IConsumer<TransactionCreated>
 {
     private readonly ILogger<TransactionCreatedConsumer> _logger;
+    private readonly IFluentEmail _fluentEmail;
+    private readonly ISmsService _smsService;
+    private readonly RecentNotificationStore _store;
 
-    public TransactionCreatedConsumer(ILogger<TransactionCreatedConsumer> logger)
+    public TransactionCreatedConsumer(
+        ILogger<TransactionCreatedConsumer> logger,
+        IFluentEmail fluentEmail,
+        ISmsService smsService,
+        RecentNotificationStore store)
     {
         _logger = logger;
+        _fluentEmail = fluentEmail;
+        _smsService = smsService;
+        _store = store;
     }
 
     public async Task Consume(ConsumeContext<TransactionCreated> context)
     {
-        var transaction = context.Message;
-        
-        _logger.LogInformation("Processing transaction notification: {TransactionId} for user {UserId}", 
-            transaction.TransactionId, transaction.UserId);
+        var e = context.Message;
 
-        // Simulate email notification
-        await SendEmailNotification(transaction);
-        
-        // Simulate SMS notification
-        await SendSmsNotification(transaction);
-        
-        _logger.LogInformation("Notification sent for transaction: {TransactionId}", 
-            transaction.TransactionId);
-    }
+        _logger.LogInformation("TransactionCreated: {TransactionId} for user {UserId} — {Type} {Amount} {Currency}",
+            e.TransactionId, e.UserId, e.Type, e.Amount, e.Currency);
 
-    private async Task SendEmailNotification(TransactionCreated transaction)
-    {
-        // Email notification stub
-        await Task.Delay(100); // Simulate email sending delay
-        
-        _logger.LogInformation("Email notification sent for transaction {TransactionId}: {Type} of {Amount} {Currency}",
-            transaction.TransactionId,
-            transaction.Type,
-            transaction.Amount,
-            transaction.Currency);
-    }
+        var subject = $"Transaction Confirmed: {e.Type} of {e.Amount} {e.Currency}";
+        var body = $"A <strong>{e.Type}</strong> transaction of <strong>{e.Amount} {e.Currency}</strong> has been processed.<br/>" +
+                   $"Transaction ID: {e.TransactionId}";
 
-    private async Task SendSmsNotification(TransactionCreated transaction)
-    {
-        // SMS notification stub
-        await Task.Delay(50); // Simulate SMS sending delay
-        
-        _logger.LogInformation("SMS notification sent for transaction {TransactionId}: {Type} of {Amount} {Currency}",
-            transaction.TransactionId,
-            transaction.Type,
-            transaction.Amount,
-            transaction.Currency);
+        await _fluentEmail
+            .To($"{e.UserId}@notifications.local")
+            .Subject(subject)
+            .Body(body, isHtml: true)
+            .SendAsync();
+
+        await _smsService.SendAsync(
+            $"+0000-{e.UserId}",
+            $"Transaction confirmed: {e.Type} {e.Amount} {e.Currency}. Ref: {e.TransactionId}.");
+
+        _store.Add(e.UserId, "TransactionCreated",
+            $"{e.Type} of {e.Amount} {e.Currency} processed. Ref: {e.TransactionId}.");
+
+        _logger.LogInformation("Notifications dispatched for transaction {TransactionId}", e.TransactionId);
     }
 }

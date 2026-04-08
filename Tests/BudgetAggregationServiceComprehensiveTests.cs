@@ -52,9 +52,9 @@ public class BudgetAggregationServiceComprehensiveTests
         var to = now.AddDays(1); // Ensure transactions are within range
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 200, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fixed", CreatedAt = now },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 50, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Future", CreatedAt = now }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 200, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fixed", CreatedAt = now },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 50, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Future", CreatedAt = now }
         );
         await db.SaveChangesAsync();
 
@@ -79,9 +79,9 @@ public class BudgetAggregationServiceComprehensiveTests
         var to = now.AddDays(1);
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 50, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 75, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 25, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 50, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 75, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 25, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now }
         );
         await db.SaveChangesAsync();
 
@@ -108,9 +108,9 @@ public class BudgetAggregationServiceComprehensiveTests
         var to = now.AddDays(-2);
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now.AddDays(-10) }, // Before range
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 200, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now.AddDays(-3) }, // Within range
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 50, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now } // After range
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now.AddDays(-10) }, // Before range
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 200, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now.AddDays(-3) }, // Within range
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 50, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now } // After range
         );
         await db.SaveChangesAsync();
 
@@ -131,8 +131,8 @@ public class BudgetAggregationServiceComprehensiveTests
         var to = DateTime.UtcNow;
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = from },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 200, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = to }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = from },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 200, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = to }
         );
         await db.SaveChangesAsync();
 
@@ -159,7 +159,7 @@ public class BudgetAggregationServiceComprehensiveTests
             AccountId = accountId, 
             UserId = Guid.NewGuid(), 
             Amount = 100, 
-            Currency = "USD", 
+            Currency = "NZD", 
             Type = "debit", 
             Description = "Test",
             SpendingType = "Fun", 
@@ -190,8 +190,8 @@ public class BudgetAggregationServiceComprehensiveTests
         var to = now.AddDays(1);
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId1, UserId = Guid.NewGuid(), Amount = 100, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId2, UserId = Guid.NewGuid(), Amount = 9999, Currency = "USD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId1, UserId = Guid.NewGuid(), Amount = 100, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId2, UserId = Guid.NewGuid(), Amount = 9999, Currency = "NZD", Type = "debit", Description = "Test", SpendingType = "Fun", CreatedAt = now }
         );
         await db.SaveChangesAsync();
 
@@ -225,7 +225,7 @@ public class BudgetAggregationServiceComprehensiveTests
             AccountId = accountId, 
             UserId = Guid.NewGuid(), 
             Amount = 100, 
-            Currency = "USD", 
+            Currency = "NZD", 
             Type = "debit", 
             Description = "Test",
             SpendingType = spendingType, 
@@ -259,7 +259,7 @@ public class BudgetAggregationServiceComprehensiveTests
             AccountId = accountId, 
             UserId = Guid.NewGuid(), 
             Amount = 200, 
-            Currency = "USD", 
+            Currency = "NZD", 
             Type = "debit", 
             Description = "Test",
             SpendingType = spendingType, 
@@ -293,7 +293,7 @@ public class BudgetAggregationServiceComprehensiveTests
             AccountId = accountId, 
             UserId = Guid.NewGuid(), 
             Amount = 100, 
-            Currency = "USD", 
+            Currency = "NZD", 
             Type = "debit", 
             Description = "Test",
             SpendingType = null, 
@@ -323,7 +323,7 @@ public class BudgetAggregationServiceComprehensiveTests
             AccountId = accountId, 
             UserId = Guid.NewGuid(), 
             Amount = 100, 
-            Currency = "USD", 
+            Currency = "NZD", 
             Type = "debit", 
             Description = "Test",
             SpendingType = "   ", 
@@ -353,7 +353,7 @@ public class BudgetAggregationServiceComprehensiveTests
             AccountId = accountId, 
             UserId = Guid.NewGuid(), 
             Amount = 100, 
-            Currency = "USD", 
+            Currency = "NZD", 
             Type = "debit", 
             Description = "Test",
             SpendingType = "Invalid", 
@@ -425,15 +425,15 @@ public class BudgetAggregationServiceComprehensiveTests
         // Create a realistic budget scenario
         db.Transactions.AddRange(
             // Week 1 - Fun activities
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 15.50m, Currency = "USD", Type = "debit", Description = "Movie tickets", SpendingType = "Fun", CreatedAt = now.AddDays(-25) },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 45.00m, Currency = "USD", Type = "debit", Description = "Concert", SpendingType = "Fun", CreatedAt = now.AddDays(-23) },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 15.50m, Currency = "NZD", Type = "debit", Description = "Movie tickets", SpendingType = "Fun", CreatedAt = now.AddDays(-25) },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 45.00m, Currency = "NZD", Type = "debit", Description = "Concert", SpendingType = "Fun", CreatedAt = now.AddDays(-23) },
             // Fixed expenses
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 1200m, Currency = "USD", Type = "debit", Description = "Rent", SpendingType = "Fixed", CreatedAt = now.AddDays(-20) },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 150m, Currency = "USD", Type = "debit", Description = "Utilities", SpendingType = "Fixed", CreatedAt = now.AddDays(-20) },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 1200m, Currency = "NZD", Type = "debit", Description = "Rent", SpendingType = "Fixed", CreatedAt = now.AddDays(-20) },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 150m, Currency = "NZD", Type = "debit", Description = "Utilities", SpendingType = "Fixed", CreatedAt = now.AddDays(-20) },
             // Future savings
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 500m, Currency = "USD", Type = "credit", Description = "Savings", SpendingType = "Future", CreatedAt = now.AddDays(-15) },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 500m, Currency = "NZD", Type = "credit", Description = "Savings", SpendingType = "Future", CreatedAt = now.AddDays(-15) },
             // Invalid entries that should be ignored
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100m, Currency = "USD", Type = "debit", Description = "Invalid", SpendingType = null, CreatedAt = now.AddDays(-10) }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 100m, Currency = "NZD", Type = "debit", Description = "Invalid", SpendingType = null, CreatedAt = now.AddDays(-10) }
         );
         await db.SaveChangesAsync();
 
@@ -458,8 +458,8 @@ public class BudgetAggregationServiceComprehensiveTests
         var to = now.AddDays(1);
 
         db.Transactions.AddRange(
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 999999.99m, Currency = "USD", Type = "debit", Description = "Large purchase", SpendingType = "Fun", CreatedAt = now },
-            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 1000000m, Currency = "USD", Type = "debit", Description = "Investment", SpendingType = "Fixed", CreatedAt = now }
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 999999.99m, Currency = "NZD", Type = "debit", Description = "Large purchase", SpendingType = "Fun", CreatedAt = now },
+            new Transaction { Id = Guid.NewGuid(), AccountId = accountId, UserId = Guid.NewGuid(), Amount = 1000000m, Currency = "NZD", Type = "debit", Description = "Investment", SpendingType = "Fixed", CreatedAt = now }
         );
         await db.SaveChangesAsync();
 

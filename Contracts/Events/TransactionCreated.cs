@@ -7,5 +7,8 @@ public record TransactionCreated(
     decimal Amount,
     string Currency,
     string Type,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    ClientType ClientType = ClientType.Individual,
+    Guid? OrganisationId = null,
+    Guid? PaymentBatchId = null
 );

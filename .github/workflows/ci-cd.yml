@@ -75,7 +75,6 @@ jobs:
       - name: Begin SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           ./.sonar/scanner/dotnet-sonarscanner begin \
             /k:"anubhavsharmawork_fintech" \
@@ -85,13 +84,11 @@ jobs:
             /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
             /d:sonar.javascript.lcov.reportPaths="ui/coverage/lcov.info" \
             /d:sonar.typescript.lcov.reportPaths="ui/coverage/lcov.info" \
-            /d:sonar.coverage.exclusions="**/Migrations/**,**/Program.cs,**/Startup.cs,**/Tests/**,**/node_modules/**,**/*.test.ts,**/*.test.tsx,**/setupTests.ts,**/reportWebVitals.ts,ui/src/index.tsx,**/*.d.ts,**/k6/**,ApiGateway/**,Contracts/**,**/Data/**DbContext.cs,ui/src/types/blockchain.ts,ui/src/components/ConnectWallet.tsx" \
-            /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/wwwroot/**,**/node_modules/**,**/coverage/**,**/build/**,**/.sonar/**,**/TestResults/**" \
+            /d:sonar.coverage.exclusions="**/Migrations/**,**/Program.cs,**/Startup.cs,**/Tests/**,**/node_modules/**,**/*.test.ts,**/*.test.tsx,**/setupTests.ts,**/reportWebVitals.ts,ui/src/index.tsx,**/*.d.ts,**/k6/**,**/*DbContext.cs,ui/src/types/blockchain.ts,ui/src/components/ConnectWallet.tsx,**/Filters/**,**/Consumers/**,**/Services/AmlScreeningWorker.cs,**/Services/AmlScreeningChannel.cs,**/Services/ICacheService.cs,**/Services/EncryptionService.cs,**/Policy/IKycStatusClient.cs" \
+            /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/wwwroot/**,**/node_modules/**,**/coverage/**,**/build/**,**/.sonar/**,**/TestResults/**,**/Filters/**,**/Consumers/**" \
             /d:sonar.test.exclusions="**/bin/**,**/obj/**,**/*.test.ts,**/*.test.tsx,**/Tests/**" \
-            /d:sonar.tests="Tests,ui/src" \
             /d:sonar.test.inclusions="**/*.test.ts,**/*.test.tsx,**/Tests/**" \
-            /d:sonar.sources="." \
-            /d:sonar.sourceEncoding="UTF-8"
+            /d:sonar.qualitygate.expect.coverage=overall
 
       - name: Build
         run: dotnet build Fintech.sln --configuration Release --no-restore

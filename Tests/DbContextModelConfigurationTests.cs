@@ -461,7 +461,7 @@ public class DbContextModelConfigurationTests
         };
 
         // Assert
-        account.Currency.Should().Be("USD");
+        account.Currency.Should().Be("NZD");
         account.IsCrypto.Should().BeFalse();
         account.TokenSymbol.Should().Be("FTK");
     }
@@ -482,7 +482,7 @@ public class DbContextModelConfigurationTests
         };
 
         // Assert
-        transaction.Currency.Should().Be("USD");
+        transaction.Currency.Should().Be("NZD");
         transaction.SpendingType.Should().BeNull();
         transaction.TxHash.Should().BeNull();
     }

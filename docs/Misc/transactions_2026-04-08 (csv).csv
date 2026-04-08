@@ -1,0 +1,14 @@
+FinTech Open Finance Platform
+Transaction Statement
+Generated: Wednesday, 8 April 2026 at 03:23 pm
+This document is system-generated and does not constitute financial advice.
+
+Date,Description,Account,Type,Category,Amount
+7/04/2026,"Salary deposit",****9012,CREDIT,Fixed,$100.00
+6/04/2026,"Grocery shopping",****9012,DEBIT,Fixed,-$50.00
+5/04/2026,"Transfer from checking",****2109,CREDIT,Future,$500.00
+4/04/2026,"Restaurant dinner",****9012,DEBIT,Fun,-$75.00
+3/04/2026,"Movie tickets",****9012,DEBIT,Fun,-$25.00
+2/04/2026,"Investment contribution",****2109,DEBIT,Future,-$200.00
+
+SUMMARY,Total Transactions: 6,Total Credits: $600.00,Total Debits: $350.00,Net Position: $250.00,

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using UserService.Controllers;
 using UserService.Data;
+using UserService.Services;
 
 namespace Tests;
 
@@ -40,7 +41,7 @@ public class UserServiceExtendedTests
         var logger = new Mock<ILogger<UsersController>>();
         var configuration = config ?? _defaultConfig;
 
-        var controller = new UsersController(db, logger.Object, configuration)
+        var controller = new UsersController(db, logger.Object, configuration, new PasswordHasherService())
         {
             ControllerContext = new ControllerContext
             {
@@ -153,8 +154,8 @@ public class UserServiceExtendedTests
         var password = "SamePassword#123";
 
         // Act
-        var hash1 = UsersController.HashPasswordStatic(password);
-        var hash2 = UsersController.HashPasswordStatic(password);
+        var hash1 = new PasswordHasherService().Hash(password);
+        var hash2 = new PasswordHasherService().Hash(password);
 
         // Assert - Same password should produce different hashes due to random salt
         hash1.Should().NotBe(hash2);
@@ -167,7 +168,7 @@ public class UserServiceExtendedTests
         var password = "TestPassword#123";
 
         // Act
-        var hash = UsersController.HashPasswordStatic(password);
+        var hash = new PasswordHasherService().Hash(password);
 
         // Assert
         var parts = hash.Split('$');
@@ -259,8 +260,8 @@ public class UserServiceExtendedTests
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(token);
 
-        // Token should be valid for approximately 8 hours
-        var expectedExpiry = DateTime.UtcNow.AddHours(8);
+        // Token should be valid for approximately 15 minutes
+        var expectedExpiry = DateTime.UtcNow.AddMinutes(15);
         jwt.ValidTo.Should().BeCloseTo(expectedExpiry, TimeSpan.FromMinutes(1));
     }
 
@@ -593,7 +594,7 @@ public class UserServiceExtendedTests
         {
             Id = Guid.NewGuid(),
             Email = email,
-            PasswordHash = UsersController.HashPasswordStatic(password),
+            PasswordHash = new PasswordHasherService().Hash(password),
             FirstName = "Normalize",
             LastName = "User",
             IsEmailVerified = true,

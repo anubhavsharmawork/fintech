@@ -1,10 +1,17 @@
 import * as React from 'react';
+import { Landmark, X } from 'lucide-react';
+import { isCorporateUser, getOrganisationId } from '../auth';
 import { useFMode } from '../hooks/useFMode';
+import { useAsync } from '../hooks/useAsync';
+import PageLoader from '../components/PageLoader';
 import CryptoAccountSwitcher from '../components/CryptoAccountSwitcher';
 import ConnectWallet from '../components/ConnectWallet';
 import BalanceCard from '../components/BalanceCard';
 import ConnectBank from '../components/ConnectBank';
 import LinkedBanks from '../components/LinkedBanks';
+import FundAccountModal from '../components/FundAccountModal';
+import { apiRequest, apiPost } from '../api/apiClient';
+import { API } from '../config/constants';
 
 interface Account {
   id: string;
@@ -16,54 +23,39 @@ interface Account {
 
 const Accounts: React.FC = () => {
   const { enabled: fModeEnabled } = useFMode();
-  const [accounts, setAccounts] = React.useState<Account[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
   const [creating, setCreating] = React.useState(false);
-  const [initAmount, setInitAmount] = React.useState('');
+  const [localError, setLocalError] = React.useState<string | null>(null);
   const [type, setType] = React.useState('Checking');
   const [showConnectBank, setShowConnectBank] = React.useState(false);
   const [bankRefreshTrigger, setBankRefreshTrigger] = React.useState(0);
+  const [fundingAccountId, setFundingAccountId] = React.useState<string | null>(null);
 
-  const load = React.useCallback(async () => {
-    if (fModeEnabled) {
-      setLoading(false);
-      return;
-    }
-    setError(null);
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/accounts', { headers: { 'Authorization': token ? `Bearer ${token}` : '' } });
+  // Use useAsync for accounts loading
+  const { data: accounts, loading, error: asyncError, refetch } = useAsync<Account[]>(
+    async (signal) => {
+      if (fModeEnabled) {
+        return [];
+      }
+      const res = await apiRequest(API.ACCOUNTS, { signal });
       if (!res.ok) throw new Error(`Failed to load accounts (${res.status})`);
-      const data = await res.json();
-      setAccounts(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load accounts');
-    } finally {
-      setLoading(false);
-    }
-  }, [fModeEnabled]);
+      return res.json();
+    },
+    [fModeEnabled]
+  );
 
-  React.useEffect(() => { load(); }, [load]);
+  const accountsList = React.useMemo(() => accounts ?? [], [accounts]);
+  const error = localError || asyncError;
 
   const createAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
+    setLocalError(null);
     try {
-      const token = localStorage.getItem('token');
-      const payload = { accountType: type, currency: 'NZD', initialDeposit: parseFloat(initAmount || '0') };
-      const res = await fetch('/accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(`Failed to create account (${res.status})`);
-      await res.json();
-      setInitAmount('');
-      await load();
+      const payload = { accountType: type, currency: 'NZD' };
+      await apiPost(API.ACCOUNTS, payload);
+      refetch();
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      setLocalError(err.message || 'Failed to create account');
     } finally {
       setCreating(false);
     }
@@ -75,6 +67,15 @@ const Accounts: React.FC = () => {
     <div>
       <h2>{fModeEnabled ? 'Crypto Wallet' : 'My Accounts'}</h2>
 
+      {!fModeEnabled && isCorporateUser() && (
+        <div className="card" role="region" aria-label="Organisation Accounts" style={{ marginBottom: 16, borderLeft: '4px solid #2563eb' }}>
+          <p className="small" style={{ margin: 0 }}>
+            <strong>Corporate Account</strong> &mdash; These accounts belong to your organisation.
+            Organisation ID: <code>{getOrganisationId()}</code>
+          </p>
+        </div>
+      )}
+
       {fModeEnabled ? (
         <div style={{ marginTop: 24 }}>
           <ConnectWallet onConnected={(addr) => console.log('Connected', addr)} />
@@ -85,13 +86,13 @@ const Accounts: React.FC = () => {
           {/* Bank Connection Section */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0 }}>🏦 External Bank Accounts</h3>
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><Landmark size={20} color="currentColor" /> External Bank Accounts</h3>
               <button
                 className="btn btn-primary"
                 onClick={() => setShowConnectBank(!showConnectBank)}
                 aria-label={showConnectBank ? 'Cancel bank connection' : 'Connect a new bank'}
               >
-                {showConnectBank ? '✕ Cancel' : '+ Connect Bank'}
+                {showConnectBank ? <><X size={16} color="currentColor" /> Cancel</> : '+ Connect Bank'}
               </button>
             </div>
 
@@ -120,39 +121,58 @@ const Accounts: React.FC = () => {
                   <option>Savings</option>
                 </select>
               </div>
-              <div className="form-group">
-                <label>Initial Deposit (NZD)</label>
-                <input type="number" step="0.01" min="0" value={initAmount} onChange={e => setInitAmount(e.target.value)} />
-              </div>
               <button className="btn btn-primary" type="submit" disabled={creating}>{creating ? 'Creating...' : 'Add New Account'}</button>
             </form>
           </div>
 
-          {loading && <p>Loading...</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          
-          {!loading && !error && accounts.length > 0 && (
+          {loading && <PageLoader />}
+           {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
+
+          {!loading && !error && accountsList.length > 0 && (
             <>
               {/* Total Balance Card */}
               <BalanceCard
-                total={accounts.reduce((sum, a) => sum + a.balance, 0)}
+                total={accountsList.reduce((sum, a) => sum + a.balance, 0)}
                 currency="NZD"
-                status={accounts.reduce((sum, a) => sum + a.balance, 0) > 5000 ? 'healthy' : 'warning'}
+                status={accountsList.reduce((sum, a) => sum + a.balance, 0) > 5000 ? 'healthy' : 'warning'}
                 showTrend={false}
               />
             </>
           )}
-          
-          {!loading && !error && accounts.length === 0 && (
-            <p>No internal accounts yet. Create one above or connect your external banks.</p>
+
+          {!loading && !error && accountsList.length === 0 && (
+            <p>No internal accounts yet. Create one above, then fund it using your connected external banks.</p>
           )}
 
           <h3 style={{ marginTop: 24, marginBottom: 16 }}>Your Internal Accounts</h3>
-          {accounts.map((account) => (
+          {accountsList.map((account) => (
             <div key={account.id} className="card">
-              <h4>{account.accountType} Account</h4>
-              <p><strong>Account Number:</strong> {account.accountNumber ?? 'N/A'}</p>
-              <p><strong>Balance:</strong> {nzd.format(account.balance)}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0' }}>{account.accountType} Account</h4>
+                  <p style={{ margin: '0 0 4px 0', fontSize: 14, color: 'var(--muted)' }}>
+                    {account.accountNumber ?? 'N/A'}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>{nzd.format(account.balance)}</p>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setFundingAccountId(fundingAccountId === account.id ? null : account.id)}
+                  aria-label={`Fund ${account.accountType} account`}
+                  style={{ fontSize: 14, padding: '8px 16px', whiteSpace: 'nowrap' }}
+                >
+                  {fundingAccountId === account.id ? <><X size={16} color="currentColor" /> Close</> : '+ Fund Account'}
+                </button>
+              </div>
+              {fundingAccountId === account.id && (
+                <FundAccountModal
+                  accountId={account.id}
+                  accountType={account.accountType}
+                  currency={account.currency || 'NZD'}
+                  onComplete={() => { setFundingAccountId(null); refetch(); }}
+                  onCancel={() => setFundingAccountId(null)}
+                />
+              )}
             </div>
           ))}
         </>

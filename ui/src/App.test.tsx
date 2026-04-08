@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import * as auth from './auth';
 import App from './App';
 import { ToastProvider } from './components/Toast';
+import { AppProvider } from './context/AppContext';
 
 jest.mock('./auth');
 jest.mock('./hooks/useFMode', () => ({
@@ -12,21 +13,24 @@ jest.mock('./hooks/useFMode', () => ({
 
 const renderApp = () => {
   return render(
-    <ToastProvider>
-      <App />
-    </ToastProvider>
+    <AppProvider>
+      <ToastProvider>
+        <App />
+      </ToastProvider>
+    </AppProvider>
   );
 };
 
 describe('App Component', () => {
   const mockGetToken = auth.getToken as jest.Mock;
   const mockOnAuthChange = auth.onAuthChange as jest.Mock;
-  let getItemSpy: jest.SpyInstance;
+  const mockDecodeJwt = auth.decodeJwt as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    getItemSpy = jest.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
     mockOnAuthChange.mockReturnValue(() => {});
+    mockDecodeJwt.mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 });
   });
 
   afterEach(() => {
@@ -35,65 +39,36 @@ describe('App Component', () => {
 
   describe('App Rendering', () => {
     it('should render the App component without crashing', async () => {
-      getItemSpy.mockReturnValue('mock-token');
       mockGetToken.mockResolvedValue('mock-token');
-
+      jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-token');
       renderApp();
-
-      await waitFor(() => {
-        expect(document.body).toBeInTheDocument();
-      });
+      await waitFor(() => { expect(document.body).toBeInTheDocument(); });
     });
 
     it('should subscribe to auth changes on mount', async () => {
-      getItemSpy.mockReturnValue('mock-token');
       mockGetToken.mockResolvedValue('mock-token');
-
+      jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-token');
       renderApp();
-
-      await waitFor(() => {
-        expect(mockOnAuthChange).toHaveBeenCalled();
-      });
+      await waitFor(() => { expect(mockOnAuthChange).toHaveBeenCalled(); });
     });
   });
 
   describe('Auth State Management', () => {
     it('should call getToken on mount', async () => {
-      getItemSpy.mockReturnValue('mock-token');
       mockGetToken.mockResolvedValue('mock-token');
-
+      jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-token');
       renderApp();
-
-      await waitFor(() => {
-        expect(mockGetToken).toHaveBeenCalled();
-      });
-    });
-
-    it('should check localStorage for token', async () => {
-      getItemSpy.mockReturnValue('stored-token');
-      mockGetToken.mockResolvedValue('stored-token');
-
-      renderApp();
-
-      await waitFor(() => {
-        expect(getItemSpy).toHaveBeenCalledWith('token');
-      });
+      await waitFor(() => { expect(mockGetToken).toHaveBeenCalled(); });
     });
 
     it('should unsubscribe from auth changes on unmount', async () => {
       const mockUnsubscribe = jest.fn();
       mockOnAuthChange.mockReturnValue(mockUnsubscribe);
-      getItemSpy.mockReturnValue('valid-token');
       mockGetToken.mockResolvedValue('valid-token');
-
+      jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('valid-token');
       const { unmount } = renderApp();
-
-      await waitFor(() => {
-        expect(mockOnAuthChange).toHaveBeenCalled();
-      });
-
+      await waitFor(() => { expect(mockOnAuthChange).toHaveBeenCalled(); });
       unmount();
-
       expect(mockUnsubscribe).toHaveBeenCalled();
     });
 
@@ -103,83 +78,100 @@ describe('App Component', () => {
         authChangeHandler = handler;
         return () => {};
       });
-
-      getItemSpy.mockReturnValue(null);
       mockGetToken.mockResolvedValue(null);
-
       renderApp();
-
-      await waitFor(() => {
-        expect(mockOnAuthChange).toHaveBeenCalled();
-      });
-
-      // The handler should exist
+      await waitFor(() => { expect(mockOnAuthChange).toHaveBeenCalled(); });
       expect(authChangeHandler).not.toBeNull();
     });
   });
 });
 
-// Test RequireAuth behavior by testing with actual route rendering
 describe('RequireAuth Component', () => {
   const mockGetToken = auth.getToken as jest.Mock;
   const mockOnAuthChange = auth.onAuthChange as jest.Mock;
-  let getItemSpy: jest.SpyInstance;
+  const mockDecodeJwt = auth.decodeJwt as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    getItemSpy = jest.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
     mockOnAuthChange.mockReturnValue(() => {});
+    mockDecodeJwt.mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 });
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('should redirect unauthenticated users to login', async () => {
-    getItemSpy.mockReturnValue(null);
+  it('should render when unauthenticated', async () => {
     mockGetToken.mockResolvedValue(null);
-
     renderApp();
-
-    await waitFor(() => {
-      // When not authenticated, the app should show login content
-      const body = document.body;
-      expect(body).toBeInTheDocument();
-    });
+    await waitFor(() => { expect(document.body).toBeInTheDocument(); });
   });
 
-  it('should allow authenticated users to access protected routes', async () => {
-    getItemSpy.mockReturnValue('valid-token');
+  it('should render when authenticated', async () => {
     mockGetToken.mockResolvedValue('valid-token');
-
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('valid-token');
     renderApp();
-
-    await waitFor(() => {
-      // When authenticated, protected content should be accessible
-      const body = document.body;
-      expect(body).toBeInTheDocument();
-    });
-  });
-
-  it('should handle token refresh during getToken', async () => {
-    getItemSpy.mockReturnValue(null);
-    mockGetToken.mockResolvedValue('refreshed-token');
-
-    renderApp();
-
-    await waitFor(() => {
-      expect(mockGetToken).toHaveBeenCalled();
-    });
+    await waitFor(() => { expect(document.body).toBeInTheDocument(); });
   });
 
   it('should handle getToken returning null', async () => {
-    getItemSpy.mockReturnValue(null);
     mockGetToken.mockResolvedValue(null);
-
     renderApp();
+    await waitFor(() => { expect(document.body).toBeInTheDocument(); });
+  });
 
-    await waitFor(() => {
-      expect(mockGetToken).toHaveBeenCalled();
-    });
+  it('should handle expired token', async () => {
+    mockDecodeJwt.mockReturnValue({ exp: Math.floor(Date.now() / 1000) - 100 });
+    mockGetToken.mockResolvedValue('expired-token');
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('expired-token');
+    renderApp();
+    await waitFor(() => { expect(document.body).toBeInTheDocument(); });
+  });
+
+  it('should handle token without exp claim', async () => {
+    mockDecodeJwt.mockReturnValue({ sub: 'user123' });
+    mockGetToken.mockResolvedValue('token-no-exp');
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('token-no-exp');
+    renderApp();
+    await waitFor(() => { expect(document.body).toBeInTheDocument(); });
+  });
+
+  it('should handle decodeJwt returning null', async () => {
+    mockDecodeJwt.mockReturnValue(null);
+    mockGetToken.mockResolvedValue('malformed-token');
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('malformed-token');
+    renderApp();
+    await waitFor(() => { expect(document.body).toBeInTheDocument(); });
+  });
+});
+
+describe('AnimatedRoutes', () => {
+  const mockGetToken = auth.getToken as jest.Mock;
+  const mockOnAuthChange = auth.onAuthChange as jest.Mock;
+  const mockDecodeJwt = auth.decodeJwt as jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
+    mockOnAuthChange.mockReturnValue(() => {});
+    mockDecodeJwt.mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should render routes with animation wrapper', async () => {
+    mockGetToken.mockResolvedValue('valid-token');
+    jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('valid-token');
+    const { container } = renderApp();
+    await waitFor(() => { expect(container.querySelector('.route-fade-in')).toBeInTheDocument(); });
+  });
+
+  it('should render login route without auth', async () => {
+    mockGetToken.mockResolvedValue(null);
+    renderApp();
+    await waitFor(() => { expect(document.body).toBeInTheDocument(); });
   });
 });

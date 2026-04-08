@@ -83,4 +83,126 @@ describe('CryptoTransactionHistory Component', () => {
 
     expect(cryptoService.getRecentTransfers).toHaveBeenCalledTimes(2);
   });
+
+  it('shows empty state when transfers list is empty', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockResolvedValue([]);
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No FTK transfers found/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Make a transfer to see it appear here/i)).toBeInTheDocument();
+  });
+
+  it('shows loading state while fetching', async () => {
+    let resolveTransfers: (v: any) => void;
+    const promise = new Promise<any>((res) => { resolveTransfers = res; });
+    (cryptoService.getRecentTransfers as jest.Mock).mockReturnValue(promise);
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    expect(screen.getByText(/Loading on-chain transfers/i)).toBeInTheDocument();
+
+    resolveTransfers!([]);
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading on-chain transfers/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('marks outgoing transfers (from === address)', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockResolvedValue([mockTransfers[0]]);
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('100.0 FTK')).toBeInTheDocument();
+    });
+    // outgoing — the transfer row links to the etherscan URL
+    const link = screen.getByRole('link', { name: /100\.0 FTK/i });
+    expect(link).toHaveAttribute('href', 'url/hash1');
+  });
+
+  it('marks incoming transfers (to === address)', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockResolvedValue([mockTransfers[1]]);
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('50.0 FTK')).toBeInTheDocument();
+    });
+    const link = screen.getByRole('link', { name: /50\.0 FTK/i });
+    expect(link).toHaveAttribute('href', 'url/hash2');
+  });
+
+  it('renders "View all on Etherscan" link for the wallet address', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockResolvedValue([]);
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No FTK transfers found/i)).toBeInTheDocument();
+    });
+
+    const etherscanLink = screen.getByText(/View all on Etherscan/i).closest('a');
+    expect(etherscanLink).toHaveAttribute('href', `url/addr/${mockAddress}`);
+    expect(etherscanLink).toHaveAttribute('target', '_blank');
+  });
+
+  it('renders "View Token" link', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockResolvedValue([]);
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No FTK transfers found/i)).toBeInTheDocument();
+    });
+
+    const tokenLink = screen.getByText(/View Token/i).closest('a');
+    expect(tokenLink).toHaveAttribute('href', 'url/token');
+  });
+
+  it('shows error message with fallback text when error has no message', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockRejectedValue({});
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load transfer history')).toBeInTheDocument();
+    });
+  });
+
+  it('reloads when refreshTrigger prop changes', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockResolvedValue([]);
+
+    const { rerender } = render(<CryptoTransactionHistory address={mockAddress} refreshTrigger={0} />);
+
+    await waitFor(() => {
+      expect(cryptoService.getRecentTransfers).toHaveBeenCalledTimes(1);
+    });
+
+    rerender(<CryptoTransactionHistory address={mockAddress} refreshTrigger={1} />);
+
+    await waitFor(() => {
+      expect(cryptoService.getRecentTransfers).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('renders transfer rows with external link target', async () => {
+    (cryptoService.getRecentTransfers as jest.Mock).mockResolvedValue(mockTransfers);
+
+    render(<CryptoTransactionHistory address={mockAddress} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('100.0 FTK')).toBeInTheDocument();
+    });
+
+    const transferLinks = screen.getAllByRole('link').filter(
+      (l) => l.getAttribute('href')?.startsWith('url/hash')
+    );
+    transferLinks.forEach((link) => {
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+  });
 });

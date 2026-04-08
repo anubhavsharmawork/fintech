@@ -7,6 +7,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using AccountService.Controllers;
 using AccountService.Data;
+using AccountService.Policy;
+using AccountService.Services;
+using Tests.Mocks;
 
 namespace Tests;
 
@@ -18,16 +21,17 @@ public class AccountsControllerComprehensiveTests
 {
     private readonly Fixture _fixture = new Fixture();
 
-    private (AccountsController Controller, AccountDbContext Db) BuildController(
-        ILogger<AccountsController>? logger = null)
+    private (AccountsController Controller, AccountDbContext Db) BuildController()
     {
         var options = new DbContextOptionsBuilder<AccountDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         var db = new AccountDbContext(options);
-        var loggerMock = logger ?? new Mock<ILogger<AccountsController>>().Object;
+        var cacheServiceMock = new Mock<ICacheService>();
+        var serviceLogger = new Mock<ILogger<AccountService.Services.AccountService>>();
+        var service = new AccountService.Services.AccountService(db, serviceLogger.Object, cacheServiceMock.Object, new AllowAllLimitPolicy());
 
-        var controller = new AccountsController(db, loggerMock)
+        var controller = new AccountsController(service)
         {
             ControllerContext = new ControllerContext
             {
@@ -63,7 +67,7 @@ public class AccountsControllerComprehensiveTests
             AccountNumber = "1234567890",
             AccountType = "Checking",
             Balance = 1000m,
-            Currency = "USD",
+            Currency = "NZD",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -75,7 +79,7 @@ public class AccountsControllerComprehensiveTests
             AccountNumber = "0987654321",
             AccountType = "Savings",
             Balance = 5000m,
-            Currency = "USD",
+            Currency = "NZD",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -140,7 +144,7 @@ public class AccountsControllerComprehensiveTests
             AccountNumber = "1111111111",
             AccountType = "Checking",
             Balance = 1000m,
-            Currency = "USD",
+            Currency = "NZD",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
@@ -152,7 +156,7 @@ public class AccountsControllerComprehensiveTests
             AccountNumber = "2222222222",
             AccountType = "Checking",
             Balance = 9999m,
-            Currency = "USD",
+            Currency = "NZD",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
@@ -196,7 +200,7 @@ public class AccountsControllerComprehensiveTests
         // Arrange
         var (controller, db) = BuildController();
         var userId = Guid.NewGuid();
-        var request = new CreateAccountRequest("Checking", "USD");
+        var request = new CreateAccountRequest("Checking", "NZD");
 
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
 
@@ -209,7 +213,7 @@ public class AccountsControllerComprehensiveTests
         GetProperty(okResult.Value, "id").Should().NotBeNullOrEmpty();
         GetProperty(okResult.Value, "accountNumber").Should().NotBeNullOrEmpty();
         GetProperty(okResult.Value, "accountType").Should().Be("Checking");
-        GetProperty(okResult.Value, "currency").Should().Be("USD");
+        GetProperty(okResult.Value, "currency").Should().Be("NZD");
         GetProperty(okResult.Value, "balance").Should().Be("0");
 
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.UserId == userId);
@@ -231,7 +235,7 @@ public class AccountsControllerComprehensiveTests
 
         // Assert
         var okResult = (OkObjectResult)result;
-        GetProperty(okResult.Value, "currency").Should().Be("USD");
+        GetProperty(okResult.Value, "currency").Should().Be("NZD");
     }
 
     [Fact]
@@ -257,7 +261,7 @@ public class AccountsControllerComprehensiveTests
     {
         // Arrange
         var (controller, _) = BuildController();
-        var request = new CreateAccountRequest("Checking", "USD");
+        var request = new CreateAccountRequest("Checking", "NZD");
 
         controller.ControllerContext.HttpContext!.User = new ClaimsPrincipal(new ClaimsIdentity());
 
@@ -273,7 +277,7 @@ public class AccountsControllerComprehensiveTests
     {
         // Arrange
         var (controller, _) = BuildController();
-        var request = new CreateAccountRequest("Checking", "USD");
+        var request = new CreateAccountRequest("Checking", "NZD");
 
         var identity = new ClaimsIdentity(new[] { new Claim("sub", "invalid-guid") }, "Test");
         controller.ControllerContext.HttpContext!.User = new ClaimsPrincipal(identity);
@@ -294,8 +298,8 @@ public class AccountsControllerComprehensiveTests
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
 
         // Act
-        await controller.CreateAccount(new CreateAccountRequest("Checking", "USD"));
-        await controller.CreateAccount(new CreateAccountRequest("Savings", "USD"));
+        await controller.CreateAccount(new CreateAccountRequest("Checking", "NZD"));
+        await controller.CreateAccount(new CreateAccountRequest("Savings", "NZD"));
 
         // Assert
         var accounts = await db.Accounts.Where(a => a.UserId == userId).ToListAsync();
@@ -312,7 +316,7 @@ public class AccountsControllerComprehensiveTests
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
 
         // Act
-        await controller.CreateAccount(new CreateAccountRequest("Checking", "USD"));
+        await controller.CreateAccount(new CreateAccountRequest("Checking", "NZD"));
 
         // Assert
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.UserId == userId);
@@ -329,7 +333,7 @@ public class AccountsControllerComprehensiveTests
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
 
         // Act
-        await controller.CreateAccount(new CreateAccountRequest("Checking", "USD"));
+        await controller.CreateAccount(new CreateAccountRequest("Checking", "NZD"));
 
         // Assert
         var afterTime = DateTime.UtcNow;
@@ -426,7 +430,7 @@ public class AccountsControllerComprehensiveTests
             AccountNumber = "9999999999",
             AccountType = "Checking",
             Balance = 9999m,
-            Currency = "USD",
+            Currency = "NZD",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
@@ -459,7 +463,7 @@ public class AccountsControllerComprehensiveTests
             AccountNumber = "1111111111",
             AccountType = "Checking",
             Balance = 1000m,
-            Currency = "USD",
+            Currency = "NZD",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
@@ -488,7 +492,7 @@ public class AccountsControllerComprehensiveTests
         controller.ControllerContext.HttpContext!.User = CreateUserPrincipal(userId);
 
         // Act
-        await controller.CreateAccount(new CreateAccountRequest("Checking", "USD"));
+        await controller.CreateAccount(new CreateAccountRequest("Checking", "NZD"));
 
         // Assert
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.UserId == userId);
@@ -511,7 +515,7 @@ public class AccountsControllerComprehensiveTests
             AccountNumber = "1234567890",
             AccountType = "Savings",
             Balance = 10000m,
-            Currency = "USD",
+            Currency = "NZD",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });

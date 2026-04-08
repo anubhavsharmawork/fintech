@@ -50,6 +50,8 @@
     <ProjectReference Include="..\AccountService\AccountService.csproj" />
     <ProjectReference Include="..\NotificationService\NotificationService.csproj" />
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
+    <ProjectReference Include="..\ApiGateway\ApiGateway.csproj" />
+    <ProjectReference Include="..\CorporateBankingService\CorporateBankingService.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,12 @@
 # Ignore Visual Studio cache and workspace files
 .vs/
 
+# Environment files containing secrets – never commit these
+.env
+.env.local
+ui/.env.local
+*.env.local
+
 # Ignore Node.js dependencies
 node_modules/
 
@@ -14,3 +20,13 @@ obj/
 *.tmp
 /ui/build
 /ui/coverage
+
+# Test coverage reports and results
+Tests/TestResults/
+Tests/coverage.cobertura.xml
+Tests/coverage.opencover.xml
+coverage.cobertura.xml
+coverage.opencover.xml
+*.coverage
+*.coveragexml
+/coveragereport

@@ -879,4 +879,136 @@ describe('crypto.ts', () => {
       expect(DEMO_WALLET.isDemo).toBe(true);
     });
   });
+
+  describe('getRecentTransfers', () => {
+    const validAddress = '0x1234567890123456789012345678901234567890';
+
+    beforeEach(() => {
+      (window as any).ethereum = {};
+    });
+
+    it('should throw if FTK_TOKEN_ADDRESS not configured', async () => {
+      const original = process.env.REACT_APP_FTK_ADDRESS;
+      delete (process.env as any).REACT_APP_FTK_ADDRESS;
+
+      const { getRecentTransfers } = require('./crypto');
+      await expect(getRecentTransfers(validAddress)).rejects.toThrow('FTK token address not configured');
+
+      process.env.REACT_APP_FTK_ADDRESS = original;
+    });
+
+    it('should throw for invalid address', async () => {
+      const { getRecentTransfers } = require('./crypto');
+      await expect(getRecentTransfers('invalid')).rejects.toThrow('Invalid address');
+    });
+
+    it('should query both sent and received transfer events', async () => {
+      const filterFromSentinel = {};
+      const filterToSentinel = {};
+      const sentEvent = {
+        transactionHash: '0xsent',
+        blockNumber: 200,
+        args: [validAddress, '0xrecipient', BigInt('1000000000000000000')]
+      };
+      const receivedEvent = {
+        transactionHash: '0xreceived',
+        blockNumber: 201,
+        args: ['0xsender', validAddress, BigInt('500000000000000000')]
+      };
+
+      mockProvider.getBlockNumber = jest.fn().mockResolvedValue(1000);
+      mockContract.filters = {
+        Transfer: jest.fn()
+          .mockReturnValueOnce(filterFromSentinel)
+          .mockReturnValueOnce(filterToSentinel)
+      };
+      mockContract.queryFilter = jest.fn()
+        .mockResolvedValueOnce([sentEvent])
+        .mockResolvedValueOnce([receivedEvent]);
+
+      const { getRecentTransfers } = require('./crypto');
+      const results = await getRecentTransfers(validAddress, 5000);
+
+      expect(mockContract.queryFilter).toHaveBeenCalledTimes(2);
+      expect(results).toHaveLength(2);
+    });
+
+    it('should sort transfers by block number descending', async () => {
+      const olderEvent = {
+        transactionHash: '0xolder',
+        blockNumber: 100,
+        args: [validAddress, '0xrecipient', BigInt('1000000000000000000')]
+      };
+      const newerEvent = {
+        transactionHash: '0xnewer',
+        blockNumber: 200,
+        args: ['0xsender', validAddress, BigInt('500000000000000000')]
+      };
+
+      mockProvider.getBlockNumber = jest.fn().mockResolvedValue(500);
+      mockContract.filters = { Transfer: jest.fn().mockReturnValue({}) };
+      mockContract.queryFilter = jest.fn()
+        .mockResolvedValueOnce([olderEvent])
+        .mockResolvedValueOnce([newerEvent]);
+
+      const { getRecentTransfers } = require('./crypto');
+      const results = await getRecentTransfers(validAddress);
+
+      expect(results[0].blockNumber).toBe(200);
+      expect(results[1].blockNumber).toBe(100);
+    });
+
+    it('should map events to transfer objects with etherscan URLs', async () => {
+      const event = {
+        transactionHash: '0xabc123',
+        blockNumber: 300,
+        args: [validAddress, '0xrecipient', BigInt('2000000000000000000')]
+      };
+
+      mockProvider.getBlockNumber = jest.fn().mockResolvedValue(500);
+      mockContract.filters = { Transfer: jest.fn().mockReturnValue({}) };
+      mockContract.queryFilter = jest.fn()
+        .mockResolvedValueOnce([event])
+        .mockResolvedValueOnce([]);
+
+      const { getRecentTransfers, ETHERSCAN_BASE_URL } = require('./crypto');
+      const results = await getRecentTransfers(validAddress);
+
+      expect(results[0].txHash).toBe('0xabc123');
+      expect(results[0].from).toBe(validAddress);
+      expect(results[0].to).toBe('0xrecipient');
+      expect(results[0].blockNumber).toBe(300);
+      expect(results[0].etherscanUrl).toContain('0xabc123');
+    });
+
+    it('should limit results to 20 most recent', async () => {
+      const events = Array.from({ length: 25 }, (_, i) => ({
+        transactionHash: `0xhash${i}`,
+        blockNumber: i,
+        args: [validAddress, '0xrecipient', BigInt('1000000000000000000')]
+      }));
+
+      mockProvider.getBlockNumber = jest.fn().mockResolvedValue(1000);
+      mockContract.filters = { Transfer: jest.fn().mockReturnValue({}) };
+      mockContract.queryFilter = jest.fn()
+        .mockResolvedValueOnce(events)
+        .mockResolvedValueOnce([]);
+
+      const { getRecentTransfers } = require('./crypto');
+      const results = await getRecentTransfers(validAddress);
+
+      expect(results.length).toBeLessThanOrEqual(20);
+    });
+
+    it('should return empty array when no events found', async () => {
+      mockProvider.getBlockNumber = jest.fn().mockResolvedValue(100);
+      mockContract.filters = { Transfer: jest.fn().mockReturnValue({}) };
+      mockContract.queryFilter = jest.fn().mockResolvedValue([]);
+
+      const { getRecentTransfers } = require('./crypto');
+      const results = await getRecentTransfers(validAddress);
+
+      expect(results).toEqual([]);
+    });
+  });
 });

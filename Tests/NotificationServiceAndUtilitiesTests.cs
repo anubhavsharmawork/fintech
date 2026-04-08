@@ -3,6 +3,9 @@ using Moq;
 using MassTransit;
 using Contracts.Events;
 using NotificationService.Consumers;
+using NotificationService.Services;
+using NotificationService.Stores;
+using FluentEmail.Core;
 
 namespace Tests;
 
@@ -12,12 +15,35 @@ namespace Tests;
 public class NotificationServiceComprehensiveTests
 {
     private Mock<ILogger<TransactionCreatedConsumer>> _loggerMock = null!;
+    private Mock<IFluentEmail> _fluentEmailMock = null!;
+    private Mock<IFluentEmail> _fluentEmailToMock = null!;
+    private Mock<IFluentEmail> _fluentEmailSubjectMock = null!;
+    private Mock<IFluentEmail> _fluentEmailBodyMock = null!;
+    private Mock<ISmsService> _smsServiceMock = null!;
+    private RecentNotificationStore _store = null!;
     private TransactionCreatedConsumer _consumer = null!;
 
     private void SetupConsumer()
     {
         _loggerMock = new Mock<ILogger<TransactionCreatedConsumer>>();
-        _consumer = new TransactionCreatedConsumer(_loggerMock.Object);
+
+        _fluentEmailMock = new Mock<IFluentEmail>();
+        _fluentEmailToMock = new Mock<IFluentEmail>();
+        _fluentEmailSubjectMock = new Mock<IFluentEmail>();
+        _fluentEmailBodyMock = new Mock<IFluentEmail>();
+
+        _fluentEmailMock.Setup(x => x.To(It.IsAny<string>())).Returns(_fluentEmailToMock.Object);
+        _fluentEmailToMock.Setup(x => x.Subject(It.IsAny<string>())).Returns(_fluentEmailSubjectMock.Object);
+        _fluentEmailSubjectMock.Setup(x => x.Body(It.IsAny<string>(), It.IsAny<bool>())).Returns(_fluentEmailBodyMock.Object);
+
+        _smsServiceMock = new Mock<ISmsService>();
+        _store = new RecentNotificationStore();
+
+        _consumer = new TransactionCreatedConsumer(
+            _loggerMock.Object, 
+            _fluentEmailMock.Object, 
+            _smsServiceMock.Object, 
+            _store);
     }
 
     [Fact]
@@ -30,7 +56,7 @@ public class NotificationServiceComprehensiveTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             100m,
-            "USD",
+            "NZD",
             "debit",
             DateTime.UtcNow
         );
@@ -46,10 +72,10 @@ public class NotificationServiceComprehensiveTests
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Processing transaction notification")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("TransactionCreated")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once()); // Called once at the start
+            Times.AtLeastOnce()); 
     }
 
     [Fact]
@@ -93,7 +119,7 @@ public class NotificationServiceComprehensiveTests
         SetupConsumer();
         var transactions = new[]
         {
-            new TransactionCreated(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100m, "USD", "debit", DateTime.UtcNow),
+            new TransactionCreated(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 100m, "NZD", "debit", DateTime.UtcNow),
             new TransactionCreated(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 200m, "EUR", "credit", DateTime.UtcNow),
             new TransactionCreated(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 50m, "GBP", "debit", DateTime.UtcNow)
         };
@@ -115,7 +141,7 @@ public class NotificationServiceComprehensiveTests
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeast(9)); // 3 logs per transaction * 3 transactions
+            Times.AtLeast(6)); // 2 logs per transaction * 3 transactions
     }
 }
 
@@ -132,7 +158,7 @@ public class ApiIntegrationScenarioTests
         var accountId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var amount = 123.45m;
-        var currency = "USD";
+        var currency = "NZD";
         var type = "debit";
         var createdAt = DateTime.UtcNow;
 
@@ -166,7 +192,7 @@ public class ApiIntegrationScenarioTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             100m,
-            "USD",
+            "NZD",
             "debit",
             DateTime.UtcNow
         );
@@ -195,7 +221,7 @@ public class DataIntegrityTests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 amount,
-                "USD",
+                "NZD",
                 "debit",
                 DateTime.UtcNow
             );
@@ -208,7 +234,7 @@ public class DataIntegrityTests
     public void TransactionCreated_WithVariousCurrencies()
     {
         // Test with different currency codes
-        var currencies = new[] { "USD", "EUR", "GBP", "JPY", "AUD", "CAD" };
+        var currencies = new[] { "NZD", "EUR", "GBP", "JPY", "AUD", "CAD" };
 
         foreach (var currency in currencies)
         {

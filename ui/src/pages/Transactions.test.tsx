@@ -5,11 +5,25 @@ import Transactions from './Transactions';
 import * as auth from '../auth';
 import * as fModeHook from '../hooks/useFMode';
 import * as cryptoService from '../services/crypto';
+import * as exportService from '../services/exportTransactions';
 import { ToastProvider } from '../components/Toast';
 
 jest.mock('../auth');
 jest.mock('../hooks/useFMode');
 jest.mock('../services/crypto');
+jest.mock('../services/exportTransactions');
+
+// Mock Recharts to avoid rendering issues in tests
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div data-testid="responsive-container">{children}</div>,
+  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
+  Area: () => <div data-testid="area" />,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+  Legend: () => null,
+}));
 
 describe('Transactions Page', () => {
   const mockToggle = jest.fn();
@@ -103,7 +117,7 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
     });
 
@@ -137,10 +151,10 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/15\/01\/2024|Jan 15/)).toBeInTheDocument();
@@ -226,11 +240,11 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^send payment/i })).toBeInTheDocument();
       });
 
       // Try to submit without selecting spending type
-      fireEvent.click(screen.getByRole('button', { name: /send/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^send payment/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/select a conscious spending type/i)).toBeInTheDocument();
@@ -252,7 +266,7 @@ describe('Transactions Page', () => {
         fireEvent.change(amountInput, { target: { value: '50' } });
       }
 
-      const sendButton = screen.getByRole('button', { name: /send/i });
+      const sendButton = screen.getByRole('button', { name: /^send payment/i });
       fireEvent.click(sendButton);
 
       await waitFor(() => {
@@ -268,7 +282,7 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^send payment/i })).toBeInTheDocument();
       });
 
       const amountInput = screen.queryByLabelText(/amount/i);
@@ -276,7 +290,7 @@ describe('Transactions Page', () => {
         fireEvent.change(amountInput, { target: { value: '0' } });
       }
 
-      fireEvent.click(screen.getByRole('button', { name: /send/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^send payment/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/valid amount/i)).toBeInTheDocument();
@@ -308,7 +322,7 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^send payment/i })).toBeInTheDocument();
       });
 
       const amountInput = screen.queryByLabelText(/amount/i);
@@ -316,7 +330,7 @@ describe('Transactions Page', () => {
         fireEvent.change(amountInput, { target: { value: '50' } });
       }
 
-      fireEvent.click(screen.getByRole('button', { name: /send/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^send payment/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/sending/i)).toBeInTheDocument();
@@ -360,7 +374,7 @@ describe('Transactions Page', () => {
       fireEvent.change(userSelect, { target: { value: 'user1' } });
 
       await waitFor(() => {
-        const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
+        const nameInput = screen.getByLabelText(/^Payee Name/i) as HTMLInputElement;
         expect(nameInput.value).toContain('Test');
       });
     });
@@ -378,17 +392,19 @@ describe('Transactions Page', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Payee Name/i)).toBeInTheDocument();
       });
 
-      const nameInput = screen.getByLabelText(/name/i);
+      const nameInput = screen.getByLabelText(/^Payee Name/i);
       const accountInput = screen.getByLabelText(/account number/i);
 
       fireEvent.change(nameInput, { target: { value: 'New Payee' } });
       fireEvent.change(accountInput, { target: { value: 'NEW123' } });
 
-      const addButton = screen.getByRole('button', { name: /add/i });
-      fireEvent.click(addButton);
+      // Get the submit button (second Add Payee button - the form submit, not the tab)
+      const addButtons = screen.getAllByRole('button', { name: /Add Payee/i });
+      const submitButton = addButtons.find(btn => btn.getAttribute('type') === 'submit') || addButtons[addButtons.length - 1];
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockAuthFetch).toHaveBeenCalledWith('/payees', expect.objectContaining({
@@ -410,17 +426,19 @@ describe('Transactions Page', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Payee Name/i)).toBeInTheDocument();
       });
 
-      const nameInput = screen.getByLabelText(/name/i);
+      const nameInput = screen.getByLabelText(/^Payee Name/i);
       const accountInput = screen.getByLabelText(/account number/i);
 
       fireEvent.change(nameInput, { target: { value: 'New Payee' } });
       fireEvent.change(accountInput, { target: { value: 'NEW123' } });
 
-      const addButton = screen.getByRole('button', { name: /add/i });
-      fireEvent.click(addButton);
+      // Get the submit button (second Add Payee button - the form submit, not the tab)
+      const addButtons = screen.getAllByRole('button', { name: /Add Payee/i });
+      const submitButton = addButtons.find(btn => btn.getAttribute('type') === 'submit') || addButtons[addButtons.length - 1];
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
         expect(screen.getByText(/failed to add payee/i)).toBeInTheDocument();
@@ -432,9 +450,9 @@ describe('Transactions Page', () => {
     beforeEach(async () => {
       renderTransactions();
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
     });
 
     it('should display transaction list', async () => {
@@ -498,7 +516,7 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^send payment/i })).toBeInTheDocument();
       });
 
       const amountInput = screen.queryByLabelText(/amount/i);
@@ -506,7 +524,7 @@ describe('Transactions Page', () => {
         fireEvent.change(amountInput, { target: { value: '50' } });
       }
 
-      fireEvent.click(screen.getByRole('button', { name: /send/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^send payment/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/failed to send payment/i)).toBeInTheDocument();
@@ -725,10 +743,10 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/no transactions/i)).toBeInTheDocument();
@@ -752,10 +770,10 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
 
       await waitFor(() => {
         // In non-fMode, should show fiat transactions only
@@ -786,10 +804,10 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
 
       await waitFor(() => {
         // In fMode, should show FTK transactions only
@@ -819,10 +837,10 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/switch modes/i)).toBeInTheDocument();
@@ -833,10 +851,10 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/CREDIT/)).toBeInTheDocument();
@@ -856,10 +874,10 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -889,16 +907,19 @@ describe('Transactions Page', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Add Payee' }));
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Payee Name/i)).toBeInTheDocument();
       });
 
-      const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
+      const nameInput = screen.getByLabelText(/^Payee Name/i) as HTMLInputElement;
       const accountInput = screen.getByLabelText(/account number/i) as HTMLInputElement;
 
       fireEvent.change(nameInput, { target: { value: 'Test Payee' } });
       fireEvent.change(accountInput, { target: { value: 'ACC123456789' } });
 
-      fireEvent.click(screen.getByRole('button', { name: /add/i }));
+      // Get the submit button (second Add Payee button - the form submit, not the tab)
+      const addButtons = screen.getAllByRole('button', { name: /Add Payee/i });
+      const submitButton = addButtons.find(btn => btn.getAttribute('type') === 'submit') || addButtons[addButtons.length - 1];
+      fireEvent.click(submitButton);
 
       await waitFor(() => {
         expect(nameInput.value).toBe('');
@@ -934,7 +955,7 @@ describe('Transactions Page', () => {
       fireEvent.change(userSelect, { target: { value: 'user1' } });
 
       await waitFor(() => {
-        const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
+        const nameInput = screen.getByLabelText(/^Payee Name/i) as HTMLInputElement;
         expect(nameInput.value).toBe('fallback@example.com');
       });
     });
@@ -955,11 +976,11 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^send payment/i })).toBeInTheDocument();
       });
 
       // Button should be disabled when no payees
-      expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /^send payment/i })).toBeDisabled();
     });
 
     it('should disable send button when no accounts', async () => {
@@ -976,11 +997,11 @@ describe('Transactions Page', () => {
       renderTransactions();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^send payment/i })).toBeInTheDocument();
       });
 
       // Button should be disabled when no accounts
-      expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /^send payment/i })).toBeDisabled();
     });
 
     it('should update form description field', async () => {
@@ -1022,4 +1043,251 @@ describe('Transactions Page', () => {
       expect(payeeSelect.value).toBe('payee2');
     });
   });
+
+  describe('History filter and export branch coverage', () => {
+    const mockExportCSV = exportService.exportCSV as jest.Mock;
+    const mockExportPDF = exportService.exportPDF as jest.Mock;
+
+    const mixedTransactions = [
+      { id: 't1', accountId: 'acc1', amount: 100, currency: 'NZD', type: 'credit', description: 'Salary payment', createdAt: '2024-01-15T10:00:00Z', spendingType: 'Future' },
+      { id: 't2', accountId: 'acc1', amount: 50, currency: 'NZD', type: 'debit', description: 'Coffee shop', createdAt: '2024-01-16T10:00:00Z', spendingType: 'Fun' },
+    ];
+
+    beforeEach(() => {
+      mockExportCSV.mockResolvedValue(undefined);
+      mockExportPDF.mockResolvedValue(undefined);
+      mockAuthFetch.mockImplementation((url: string) => {
+        if (url === '/accounts') return Promise.resolve({ ok: true, json: async () => mockAccounts });
+        if (url === '/payees') return Promise.resolve({ ok: true, json: async () => mockPayees });
+        if (url === '/transactions') return Promise.resolve({ ok: true, json: async () => mixedTransactions });
+        if (url === '/users/all') return Promise.resolve({ ok: true, json: async () => mockUsers });
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      });
+    });
+
+    const openHistoryTab = async () => {
+      renderTransactions();
+      await waitFor(() => expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
+      await waitFor(() => expect(screen.getByPlaceholderText('Search description...')).toBeInTheDocument());
+    };
+
+    it('filters by credit type', async () => {
+      await openHistoryTab();
+      const selects = screen.getAllByRole('combobox');
+      const typeSelect = selects.find(s => (s as HTMLSelectElement).options[0]?.text === 'All Types');
+      expect(typeSelect).toBeDefined();
+      fireEvent.change(typeSelect!, { target: { value: 'credit' } });
+      await waitFor(() => {
+        expect(screen.getByText('Salary payment')).toBeInTheDocument();
+        expect(screen.queryByText('Coffee shop')).not.toBeInTheDocument();
+      });
+    });
+
+    it('filters by debit type', async () => {
+      await openHistoryTab();
+      const selects = screen.getAllByRole('combobox');
+      const typeSelect = selects.find(s => (s as HTMLSelectElement).options[0]?.text === 'All Types');
+      fireEvent.change(typeSelect!, { target: { value: 'debit' } });
+      await waitFor(() => {
+        expect(screen.getByText('Coffee shop')).toBeInTheDocument();
+        expect(screen.queryByText('Salary payment')).not.toBeInTheDocument();
+      });
+    });
+
+    it('filters by description search text', async () => {
+      await openHistoryTab();
+      const searchInput = screen.getByPlaceholderText('Search description...');
+      fireEvent.change(searchInput, { target: { value: 'Coffee' } });
+      await waitFor(() => {
+        expect(screen.getByText('Coffee shop')).toBeInTheDocument();
+        expect(screen.queryByText('Salary payment')).not.toBeInTheDocument();
+      });
+    });
+
+    it('filters by from date', async () => {
+      await openHistoryTab();
+      const fromInput = screen.getByLabelText('From date');
+      fireEvent.change(fromInput, { target: { value: '2024-01-16' } });
+      await waitFor(() => {
+        expect(screen.getByText('Coffee shop')).toBeInTheDocument();
+        expect(screen.queryByText('Salary payment')).not.toBeInTheDocument();
+      });
+    });
+
+    it('filters by to date', async () => {
+      await openHistoryTab();
+      const toInput = screen.getByLabelText('To date');
+      fireEvent.change(toInput, { target: { value: '2024-01-15' } });
+      await waitFor(() => {
+        expect(screen.getByText('Salary payment')).toBeInTheDocument();
+        expect(screen.queryByText('Coffee shop')).not.toBeInTheDocument();
+      });
+    });
+
+    it('changes sort order to amount ascending', async () => {
+      await openHistoryTab();
+      const selects = screen.getAllByRole('combobox');
+      const sortSelect = selects.find(s => (s as HTMLSelectElement).value === 'createdAt_desc');
+      expect(sortSelect).toBeDefined();
+      fireEvent.change(sortSelect!, { target: { value: 'amount_asc' } });
+      await waitFor(() => {
+        expect((sortSelect as HTMLSelectElement).value).toBe('amount_asc');
+      });
+    });
+
+    it('opens and closes export dropdown', async () => {
+      await openHistoryTab();
+      const exportBtn = screen.getByRole('button', { name: /export/i });
+      expect(exportBtn).not.toBeDisabled();
+      fireEvent.click(exportBtn);
+      await waitFor(() => expect(screen.getByText('Download CSV')).toBeInTheDocument());
+      fireEvent.click(exportBtn);
+      await waitFor(() => expect(screen.queryByText('Download CSV')).not.toBeInTheDocument());
+    });
+
+    it('calls exportCSV when Download CSV is clicked', async () => {
+      await openHistoryTab();
+      fireEvent.click(screen.getByRole('button', { name: /export/i }));
+      await waitFor(() => expect(screen.getByText('Download CSV')).toBeInTheDocument());
+      fireEvent.click(screen.getByText('Download CSV'));
+      await waitFor(() => expect(mockExportCSV).toHaveBeenCalled());
+    });
+
+    it('calls exportPDF when Download PDF is clicked', async () => {
+      await openHistoryTab();
+      fireEvent.click(screen.getByRole('button', { name: /export/i }));
+      await waitFor(() => expect(screen.getByText('Download PDF')).toBeInTheDocument());
+      fireEvent.click(screen.getByText('Download PDF'));
+      await waitFor(() => expect(mockExportPDF).toHaveBeenCalled());
+    });
+
+    it('export button is disabled when no transactions match filter', async () => {
+      await openHistoryTab();
+      const searchInput = screen.getByPlaceholderText('Search description...');
+      fireEvent.change(searchInput, { target: { value: 'zzz_no_match_zzz' } });
+      await waitFor(() => {
+        const exportBtn = screen.getByRole('button', { name: /export/i });
+        expect(exportBtn).toBeDisabled();
+      });
+    });
+
+    it('filters by spending type', async () => {
+      await openHistoryTab();
+      const selects = screen.getAllByRole('combobox');
+      const spendingSelect = selects.find(s => (s as HTMLSelectElement).options[0]?.text === 'All Spending Types');
+      expect(spendingSelect).toBeDefined();
+      fireEvent.change(spendingSelect!, { target: { value: 'Fun' } });
+      await waitFor(() => {
+        expect(screen.getByText('Coffee shop')).toBeInTheDocument();
+        expect(screen.queryByText('Salary payment')).not.toBeInTheDocument();
+      });
+    });
+
+    it('renders "—" when transaction has no spendingType', async () => {
+      mockAuthFetch.mockImplementation((url: string) => {
+        if (url === '/accounts') return Promise.resolve({ ok: true, json: async () => mockAccounts });
+        if (url === '/payees') return Promise.resolve({ ok: true, json: async () => mockPayees });
+        if (url === '/transactions') return Promise.resolve({ ok: true, json: async () => [
+          { id: 't_no_cat', accountId: 'acc1', amount: 200, currency: 'NZD', type: 'credit', description: 'No Category', createdAt: '2024-01-17T10:00:00Z', spendingType: null },
+        ]});
+        if (url === '/users/all') return Promise.resolve({ ok: true, json: async () => mockUsers });
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      });
+
+      renderTransactions();
+      await waitFor(() => expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('No Category')).toBeInTheDocument();
+        // The spending type cell renders '—' when spendingType is falsy
+        expect(screen.getByText('—')).toBeInTheDocument();
+      });
+    });
+
+    it('renders "Completed" status when transaction status is null', async () => {
+      mockAuthFetch.mockImplementation((url: string) => {
+        if (url === '/accounts') return Promise.resolve({ ok: true, json: async () => mockAccounts });
+        if (url === '/payees') return Promise.resolve({ ok: true, json: async () => mockPayees });
+        if (url === '/transactions') return Promise.resolve({ ok: true, json: async () => [
+          { id: 't_no_status', accountId: 'acc1', amount: 75, currency: 'NZD', type: 'credit', description: 'No Status Tx', createdAt: '2024-01-18T10:00:00Z', spendingType: 'Fun', status: null },
+        ]});
+        if (url === '/users/all') return Promise.resolve({ ok: true, json: async () => mockUsers });
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      });
+
+      renderTransactions();
+      await waitFor(() => expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('No Status Tx')).toBeInTheDocument();
+        expect(screen.getByText('Completed')).toBeInTheDocument();
+      });
+    });
+
+    it('shows "No transactions match" message when filter reduces fiat results to zero but transactions exist', async () => {
+      mockAuthFetch.mockImplementation((url: string) => {
+        if (url === '/accounts') return Promise.resolve({ ok: true, json: async () => mockAccounts });
+        if (url === '/payees') return Promise.resolve({ ok: true, json: async () => mockPayees });
+        if (url === '/transactions') return Promise.resolve({ ok: true, json: async () => mixedTransactions });
+        if (url === '/users/all') return Promise.resolve({ ok: true, json: async () => mockUsers });
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      });
+
+      renderTransactions();
+      await waitFor(() => expect(screen.getByRole('button', { name: /^History/i })).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: /^History/i }));
+      await waitFor(() => expect(screen.getByPlaceholderText('Search description...')).toBeInTheDocument());
+
+      // Filter to a description that matches nothing
+      const searchInput = screen.getByPlaceholderText('Search description...');
+      fireEvent.change(searchInput, { target: { value: 'zzz_no_match_zzz' } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/no transactions match the current filters/i)).toBeInTheDocument();
+      });
+    });
+
+    it('changes sort order to amount descending', async () => {
+      await openHistoryTab();
+      const selects = screen.getAllByRole('combobox');
+      const sortSelect = selects.find(s => (s as HTMLSelectElement).value === 'createdAt_desc');
+      expect(sortSelect).toBeDefined();
+      fireEvent.change(sortSelect!, { target: { value: 'amount_desc' } });
+      await waitFor(() => {
+        expect((sortSelect as HTMLSelectElement).value).toBe('amount_desc');
+      });
+    });
+
+    it('changes sort order to date ascending', async () => {
+      await openHistoryTab();
+      const selects = screen.getAllByRole('combobox');
+      const sortSelect = selects.find(s => (s as HTMLSelectElement).value === 'createdAt_desc');
+      expect(sortSelect).toBeDefined();
+      fireEvent.change(sortSelect!, { target: { value: 'createdAt_asc' } });
+      await waitFor(() => {
+        expect((sortSelect as HTMLSelectElement).value).toBe('createdAt_asc');
+      });
+    });
+
+    it('closes export dropdown when clicking outside', async () => {
+      await openHistoryTab();
+      const exportBtn = screen.getByRole('button', { name: /export/i });
+      fireEvent.click(exportBtn);
+      await waitFor(() => expect(screen.getByText('Download CSV')).toBeInTheDocument());
+
+      // Click outside the export menu
+      fireEvent.mouseDown(document.body);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Download CSV')).not.toBeInTheDocument();
+      });
+    });
+  });
 });
+
+
+
+

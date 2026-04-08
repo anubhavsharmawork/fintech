@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { 
+import { Coins, Link2 } from 'lucide-react';
+import {
   getConnectedBanks, 
   getExternalAccounts, 
   disconnectBank, 
@@ -76,18 +77,18 @@ const LinkedBanks: React.FC<LinkedBanksProps> = ({ refreshTrigger }) => {
   return (
     <div>
       {/* Total External Balance */}
-      <div className="card" style={{ marginBottom: 16, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
-        <h3 style={{ color: 'white', marginBottom: 8 }}>💰 Connected Bank Total</h3>
+      <div className="card" style={{ marginBottom: 16, background: '#1e293b' }}>
+        <h3 style={{ color: 'white', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}><Coins size={20} color="currentColor" /> Connected Bank Total</h3>
         <p style={{ color: 'white', fontSize: 28, fontWeight: 'bold', margin: 0 }}>
           {nzd.format(totalBalance)}
         </p>
-        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 4 }}>
+        <p style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>
           Across {connections.length} bank(s) • {accounts.length} account(s)
         </p>
       </div>
 
       {/* Connected Banks */}
-      <h3 style={{ marginBottom: 12 }}>🔗 Linked Banks</h3>
+      <h3 style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><Link2 size={20} color="currentColor" /> Linked Banks</h3>
       {connections.map((conn) => {
         const bankAccounts = accounts.filter(a => a.bankName === conn.bankName);
         const bankTotal = bankAccounts.reduce((sum, a) => sum + a.balance, 0);
@@ -104,7 +105,7 @@ const LinkedBanks: React.FC<LinkedBanksProps> = ({ refreshTrigger }) => {
                       fontSize: 11, 
                       padding: '2px 6px', 
                       borderRadius: 4, 
-                      background: conn.status === 'Active' ? 'var(--success)' : 'var(--warning)',
+                      background: conn.status === 'Active' ? '#065f46' : '#92400e',
                       color: 'white'
                     }}
                   >
@@ -149,7 +150,7 @@ const LinkedBanks: React.FC<LinkedBanksProps> = ({ refreshTrigger }) => {
                 >
                   <div>
                     <p style={{ margin: 0, fontWeight: 500 }}>{account.accountName}</p>
-                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
                       {account.accountType} • {account.accountNumber}
                     </p>
                   </div>

@@ -6,20 +6,26 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ToastProvider } from './components/Toast';
 import { FModeProvider } from './hooks/useFMode';
+import { AppProvider } from './context/AppContext';
 import { initializeAccessibility } from './accessibility';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
 root.render(
-  <React.StrictMode>
-    <FModeProvider>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
-    </FModeProvider>
-  </React.StrictMode>
+  <ErrorBoundary>
+    <React.StrictMode>
+      <AppProvider>
+        <FModeProvider>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </FModeProvider>
+      </AppProvider>
+    </React.StrictMode>
+  </ErrorBoundary>
 );
 
 // Initialize accessibility features on mount

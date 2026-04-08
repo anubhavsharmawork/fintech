@@ -37,6 +37,18 @@ public class LedgerPayee
     public DateTime CreatedAt { get; set; }
 }
 
+public class AuditLogEntry
+{
+    public Guid Id { get; set; }
+    public DateTime Timestamp { get; set; }
+    public Guid UserId { get; set; }
+    public string Action { get; set; } = null!;
+    public string EntityType { get; set; } = null!;
+    public Guid? EntityId { get; set; }
+    public string? Detail { get; set; }
+    public string? IpAddress { get; set; }
+}
+
 public class LedgerDbContext : DbContext
 {
     public LedgerDbContext(DbContextOptions<LedgerDbContext> options) : base(options) { }
@@ -44,6 +56,7 @@ public class LedgerDbContext : DbContext
     public DbSet<LedgerAccount> LedgerAccounts => Set<LedgerAccount>();
     public DbSet<LedgerTransaction> LedgerTransactions => Set<LedgerTransaction>();
     public DbSet<LedgerPayee> LedgerPayees => Set<LedgerPayee>();
+    public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -74,6 +87,19 @@ public class LedgerDbContext : DbContext
             e.Property(x => x.Name).HasMaxLength(200).IsRequired();
             e.Property(x => x.AccountNumber).HasMaxLength(50).IsRequired();
             e.HasIndex(x => new { x.UserId, x.AccountNumber }).IsUnique();
+        });
+
+        modelBuilder.Entity<AuditLogEntry>(e =>
+        {
+            e.ToTable("AuditLog");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Timestamp).IsRequired();
+            e.Property(x => x.Action).HasMaxLength(100).IsRequired();
+            e.Property(x => x.EntityType).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Detail).HasMaxLength(1000);
+            e.Property(x => x.IpAddress).HasMaxLength(45);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => x.Timestamp);
         });
     }
 }
