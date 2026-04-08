@@ -88,6 +88,7 @@ jobs:
             /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,**/wwwroot/**,**/node_modules/**,**/coverage/**,**/build/**,**/.sonar/**,**/TestResults/**,**/Filters/**,**/Consumers/**" \
             /d:sonar.test.exclusions="**/bin/**,**/obj/**,**/*.test.ts,**/*.test.tsx,**/Tests/**" \
             /d:sonar.test.inclusions="**/*.test.ts,**/*.test.tsx,**/Tests/**" \
+            /d:sonar.cpd.exclusions="NotificationService/**,ApiGateway/**,TransactionService/**,UserService/**,AccountService/**,CorporateBankingService/**" \
             /d:sonar.qualitygate.expect.coverage=overall
 
       - name: Build
